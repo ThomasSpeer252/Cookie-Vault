@@ -2,7 +2,7 @@ import crxLogo from '@/assets/crx.svg'
 import tsLogo from '@/assets/ts.svg'
 import viteLogo from '@/assets/vite.svg'
 import { setupCounter } from './counter.ts'
-import './style.css'
+import './style.scss'
 
 document.querySelector('#app')!.innerHTML = `
   <div>
