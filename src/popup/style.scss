@@ -229,3 +229,61 @@ body {
     }
   }
 }
+
+// Settings page visuals
+
+.site-details-view {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--bg-primary);
+  height: 100%;
+  box-sizing: border-box;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+}
+
+.detail-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-1);
+  border-radius: 8px;
+  padding: 12px;
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+
+    .header-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mono-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.5px;
+    }
+
+    .domain-badge {
+      background: var(--surface-3);
+      color: var(--accent-green);
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .close-btn {
+      font-size: 14px;
+      color: var(--text-muted);
+      padding: 2px 6px;
+
+      &:hover {
+        color: var(--text-primary);
+      }
+    }
+  }
+}

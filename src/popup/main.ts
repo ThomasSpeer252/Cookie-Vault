@@ -1,4 +1,5 @@
 import './style.scss';
+import {renderSiteDetails} from './site_settings';
 
 interface SiteInfo {
     name: string;
@@ -21,6 +22,10 @@ const SITES: SiteInfo[] = [
     { name: "Long name aaaaaaaaaaaaaaaaaaaaaaaaa", safe: true, isVaulted: false },
     { name: "Zac needs Sleep badly", safe: true, isVaulted: true }
 ];
+
+// For returning from settings
+// 9/18: DIDNT FINISH YET
+let initialAppHTML = '';
 
 function renderSiteList() {
 
@@ -115,17 +120,48 @@ function renderSiteList() {
             }
         })
     })
+
+    // Open Settings Page
+    //9/18: DIDNT FINISH YET. Exiting popup didn't save and stuck on blank screen
+    container.querySelectorAll('.settings-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const button = e.currentTarget as HTMLButtonElement;
+            const domain = button.getAttribute('data-site');
+
+            if (domain) {
+                renderSiteDetails(domain, restoreHomeView);
+            }
+        })
+    });
+}
+
+//9/18: DIDNT FINISH YET. Exiting popup didn't save and stuck on blank screen
+function restoreHomeView() {
+    const appContainer = document.getElementById('app');
+    if (!appContainer) return;
+
+    appContainer.innerHTML = initialAppHTML;
+    renderSiteList();
+    bindHomeEventListeners();
+}
+
+// save everything for opening/returning a popup
+//9/18: DIDNT FINISH YET. Exiting popup didn't save and stuck on blank screen
+function bindHomeEventListeners() {
+    const searchInput = document.getElementById('site-search');
+    const vaultCheck = document.getElementById('filter-vaulted');
+    const unvaultCheck = document.getElementById('filter-unvaulted');
+
+    searchInput?.addEventListener('input', () => renderSiteList());
+    vaultCheck?.addEventListener('change', () => renderSiteList());
+    unvaultCheck?.addEventListener('change', () => renderSiteList());
 }
 
 // Search Bar
 document.addEventListener('DOMContentLoaded', () => {
+    const appContainer = document.getElementById('app');
+    if (!appContainer) {initialAppHTML = appContainer.innerHTML};
+
     renderSiteList();
-
-    const searchInput = document.getElementById('site-search');
-    const vaultedCheck = document.getElementById('filter-vaulted');
-    const unvaultedCheck = document.getElementById('filter-unvaulted');
-
-    searchInput?.addEventListener('input', () => renderSiteList());
-    vaultedCheck?.addEventListener('change', () => renderSiteList());
-    unvaultedCheck?.addEventListener('change', () => renderSiteList());
+    bindHomeEventListeners();
 });
