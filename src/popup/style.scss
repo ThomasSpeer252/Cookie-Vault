@@ -37,12 +37,36 @@ body {
   height: 100%;
 }
 
-// separate the structure and list of websites for the scrollbar to only tackle site section
+// Separate the structure and website list by header/body
+
 .vault-body {
   display: flex;
   flex-direction: column;
   flex: 1;
   min-height: 0;
+
+  // Filter buttons
+  .filter-controls {
+    display: flex;
+    gap: 12px;
+    padding: 10px 10px 0 10px;
+
+    .filter-chip {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      user-select: none;
+
+      input[type="checkbox"] {
+        cursor: pointer;
+        accent-color: var(--accent-green);
+      }
+
+    }
+  }
 }
 
 .vault-header {
@@ -87,6 +111,18 @@ body {
   &:hover {
     background: var(--surface-3);
     color: var(--text-secondary);
+  }
+
+  // Vault button highlight change upon click
+  &.vault-btn {
+    &:hover {
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
+    &.active {
+      border-color: var(--accent-blue);
+      color: var(--accent-blue);
+    }
   }
 }
 
@@ -153,7 +189,8 @@ body {
   align-items: center;
   justify-content: space-between;
 
-  // Status dot and name on left side of each website
+  // Left icons: Status dot and name
+
   .site-info {
     display: flex;
     align-items: center;
@@ -174,7 +211,8 @@ body {
     }
   }
 
-  /* Right section: 3-icon action row */
+  // Right icons: info, settings, vault
+
   .action-group {
     display: flex;
     align-items: center;

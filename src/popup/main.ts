@@ -3,40 +3,56 @@ import './style.scss';
 interface SiteInfo {
     name: string;
     safe: boolean;
+    isVaulted: boolean;
 }
 
 // 9/17: Temporary hardcoded list of websites
 const SITES: SiteInfo[] = [
-    { name: "google.com", safe: true },
-    { name: "github.com", safe: true },
-    { name: "Suspicious.org", safe: false },
-    { name: "evil_ram.net", safe: false },
-    { name: "Testing scrollbar 1", safe: true },
-    { name: "Testing scrollbar 2", safe: true },
-    { name: "Testing scrollbar 3", safe: true },
-    { name: "Testing scrollbar 4", safe: true },
-    { name: "Sneaky Trojan", safe: true },
-    { name: "Testing scrollbar 5", safe: true },
-    { name: "Testing scrollbar 6", safe: true },
-    { name: "Zac needs Sleep badly", safe: true }
+    { name: "google.com", safe: true, isVaulted: false },
+    { name: "github.com", safe: true, isVaulted: false },
+    { name: "Suspicious.org", safe: false, isVaulted: false },
+    { name: "evil_ram.net", safe: false, isVaulted: false },
+    { name: "Testing scrollbar 1", safe: true, isVaulted: true },
+    { name: "Testing scrollbar 2", safe: true, isVaulted: true },
+    { name: "Testing scrollbar 3", safe: true, isVaulted: false },
+    { name: "Testing scrollbar 4", safe: true, isVaulted: false },
+    { name: "Sneaky Trojan", safe: true, isVaulted: false },
+    { name: "Testing scrollbar 5", safe: true, isVaulted: false },
+    { name: "Long name aaaaaaaaaaaaaaaaaaaaaaaaa", safe: true, isVaulted: false },
+    { name: "Zac needs Sleep badly", safe: true, isVaulted: true }
 ];
 
-function renderSiteList(filterText = '') {
+function renderSiteList() {
+
+    // Get site list, search bar, and vault/unvault filter values
     const container = document.getElementById('site-list');
+    const searchInput = document.getElementById('site-search') as HTMLInputElement;
+    const vaultCheck = document.getElementById('filter-vaulted') as HTMLInputElement;
+    const unvaultCheck = document.getElementById('filter-unvaulted') as HTMLInputElement;
+
     if (!container) return;
+
+    // Turn the searchbar and filters into usable input.
+    const filterText = searchInput?.value.toLowerCase() || '';
+    const showVaulted = vaultCheck ? vaultCheck.checked : true;
+    const showUnvaulted = vaultCheck ? unvaultCheck.checked : true;
 
     container.innerHTML = '';
 
-    const filtered = SITES.filter(site =>
-        site.name.toLowerCase().includes(filterText.toLowerCase())
-    );
+    // List filter
+    const filtered = SITES.filter(site => {
+        const matchesText = site.name.toLowerCase().includes(filterText);
+        const matchesCategory = (site.isVaulted && showVaulted) || (!site.isVaulted && showUnvaulted);
+        return matchesText && matchesCategory;
+    });
 
+    // Iterate each filtered site for it' icons (status, name, info, settings, vault)
     filtered.forEach(site => {
         const card = document.createElement('div');
         card.className = 'site-card';
 
         // Green = no issues found from website's cookies. Red = flagged
-        // 9/17: We may want to do a spectrum (i.e. add Yellow if there's minor concerns)
+        // 9/17: We may want to do a spectrum (i.e. add Yellow if there's minor concerns).
         const dotColor = site.safe ? 'var(--accent-green)' : 'var(--accent-red)';
 
         card.innerHTML = `
@@ -56,14 +72,6 @@ function renderSiteList(filterText = '') {
           </svg>
         </button>
 
-        <!-- Vault/Unvault -->
-        <button class="icon-btn vault-btn" title="Vault Cookies" data-site="${site.name}">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <rect x="2" y="5.5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2" />
-            <path d="M4 5.5V4a2.5 2.5 0 0 1 5 0v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
-          </svg>
-        </button>
-
         <!-- Settings -->
         <button class="icon-btn settings-btn" title="Site Settings" data-site="${site.name}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -80,22 +88,44 @@ function renderSiteList(filterText = '') {
             </g>
           </svg>
         </button>
+        
+        <!-- Vault/Unvault -->
+        <button class="icon-btn vault-btn ${site.isVaulted ? 'active' : ''}" title="Vault Cookies" data-site="${site.name}">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+            <rect x="2" y="5.5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2" />
+            <path d="M4 5.5V4a2.5 2.5 0 0 1 5 0v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </button>
       </div>
     `;
 
         container.appendChild(card);
     });
+
+    // Update vault button on click
+    container.querySelectorAll('.vault-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const button = e.currentTarget as HTMLButtonElement;
+            const domain = button.getAttribute('data-site');
+            const siteObj = SITES.find(s => s.name === domain);
+
+            if (siteObj) {
+                siteObj.isVaulted = !siteObj.isVaulted;
+                renderSiteList();
+            }
+        })
+    })
 }
 
 // Search Bar
 document.addEventListener('DOMContentLoaded', () => {
     renderSiteList();
 
-    const searchInput = document.getElementById('site-search') as HTMLInputElement;
-    if (searchInput) {
-        searchInput.addEventListener('input', (e) => {
-            const target = e.target as HTMLInputElement;
-            renderSiteList(target.value);
-        });
-    }
+    const searchInput = document.getElementById('site-search');
+    const vaultedCheck = document.getElementById('filter-vaulted');
+    const unvaultedCheck = document.getElementById('filter-unvaulted');
+
+    searchInput?.addEventListener('input', () => renderSiteList());
+    vaultedCheck?.addEventListener('change', () => renderSiteList());
+    unvaultedCheck?.addEventListener('change', () => renderSiteList());
 });
