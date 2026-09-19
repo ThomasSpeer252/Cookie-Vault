@@ -16,6 +16,10 @@
   --accent-amber: #fbbf24;
   --accent-red: #f87171;
 
+  --badge-blue: #3a92ff;
+  --badge-green: #2eb300;
+  --badge-amber: #dc9d00;
+
   --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
@@ -287,3 +291,184 @@ body {
     }
   }
 }
+
+// Settings profile top info
+
+.cookies-table {
+  display: flex;
+  flex-direction: column;
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding-bottom: 12px;
+    padding-top: 12px;
+    border-bottom: 1px solid var(--border-1);
+    align-items: center;
+
+    // Expire and Options label needs to line up
+    .header-expires {
+      margin-left: 75px;
+    }
+    .header-options {
+      margin-right: 15px;
+    }
+  }
+
+  // Scrollbar: same variables/citation as the previous
+  .cookie-list-container {
+    max-height: 144px;
+    overflow-y: auto;
+    padding-top: 8px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+      margin: 4px 0;
+    }
+
+    // scrollbar color/shape
+    &::-webkit-scrollbar-thumb {
+      background-color: var(--border-2);
+      border-radius: 9999px;
+      border: 1px solid transparent;
+      transition: background-color 0.2s ease;
+
+      // highlight scrollbar on hover
+      &:hover {
+        background-color: var(--text-muted);
+      }
+    }
+  }
+
+  .cookie-row {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-muted);
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-1);
+
+    &:last-child {
+     border-bottom: none;
+    }
+
+    .cookie-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      .cookie-name {
+        font-size: 14px;
+        color: var(--text-primary);
+      }
+
+      // Security flag boxes/badges
+      .flag-badges {
+        display: flex;
+        gap: 4px;
+
+        .flag-badge {
+          font-size: 11px;
+          padding: 2px 4px;
+          border-radius: 4px;
+          font-weight: 600;
+
+          &.sec {
+            color: var(--badge-blue);
+          }
+
+          &.httponly {
+            color: var(--badge-green);
+          }
+
+          &.ss-s, &.ss-n {
+            color: var(--badge-amber);
+          }
+        }
+      }
+    }
+
+    .cookie-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .cookie-expires {
+        font-size: 10px;
+        color: var(--text-muted);
+      }
+
+      // right hand side cookie buttons
+
+      .row-btns {
+        display: flex;
+        gap: 2px;
+
+        .row-btn {
+          padding: 3px;
+          opacity: 0.6;
+
+          // Vault and edit buttons hover blue. Delete hovers amber
+
+          &:hover {
+            opacity: 1;
+            color: var(--accent-blue);
+          }
+
+          &.delete-btn:hover {
+            opacity: 1;
+            color: var(--accent-amber);
+          }
+
+          &.active {
+            opacity: 1;
+            color: var(--accent-blue);
+          }
+        }
+      }
+    }
+  }
+}
+
+  // Site Profile styles
+  .profile-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      border-bottom: 1px dashed var(--border-1);
+      padding-bottom: 4px;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      .profile-label {
+        color: var(--text-muted);
+      }
+
+      .profile-value {
+        color: var(--text-secondary);
+
+        &.score-badge {
+          background: rgba(52, 211, 153, 0.15);
+          color: var(--accent-green);
+          padding: 1px 6px;
+          border-radius: 4px;
+        }
+
+        &.status-green {
+          color: var(--accent-green);
+        }
+      }
+    }
+  }

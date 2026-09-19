@@ -160,7 +160,7 @@ function bindHomeEventListeners() {
 // Search Bar
 document.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.getElementById('app');
-    if (!appContainer) {initialAppHTML = appContainer.innerHTML};
+    if (appContainer) {initialAppHTML = appContainer.innerHTML};
 
     renderSiteList();
     bindHomeEventListeners();
