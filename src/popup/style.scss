@@ -127,15 +127,13 @@ body {
     color: var(--text-secondary);
   }
 
-  // Vault button highlight change upon click
-  &.vault-btn {
+  &.delete-btn {
     &:hover {
-      border-color: var(--accent-blue);
-      color: var(--accent-blue);
+      color: var(--accent-red);
     }
     &.active {
-      border-color: var(--accent-blue);
-      color: var(--accent-blue);
+      border-color: var(--accent-red);
+      color: var(--accent-red);
     }
   }
 }

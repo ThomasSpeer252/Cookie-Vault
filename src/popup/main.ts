@@ -95,11 +95,10 @@ function renderSiteList() {
           </svg>
         </button>
         
-        <!-- Vault/Unvault -->
-        <button class="icon-btn vault-btn ${site.isVaulted ? 'active' : ''}" title="Vault Cookies" data-site="${site.name}">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-            <rect x="2" y="5.5" width="9" height="7" rx="1.5" stroke="currentColor" stroke-width="1.2" />
-            <path d="M4 5.5V4a2.5 2.5 0 0 1 5 0v1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+        <!-- Delete all site cookies -->
+        <button class="icon-btn delete-btn" title="Delete Site Cookies">
+          <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
+            <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
         </button>
       </div>
