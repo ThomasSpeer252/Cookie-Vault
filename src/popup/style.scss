@@ -396,14 +396,17 @@ input:checked + .slider:before {
 
           &.sec {
             color: var(--badge-blue);
+            background: rgba(96, 165, 250, 0.12);
           }
 
           &.httponly {
             color: var(--badge-green);
+            background: rgba(52, 211, 153, 0.12);
           }
 
           &.ss-s, &.ss-n {
             color: var(--badge-amber);
+            background: rgba(251, 191, 36, 0.12);
           }
         }
       }
