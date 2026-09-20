@@ -28,7 +28,17 @@
       </button>
       <button id="settings-btn" class="icon-btn" title="Settings">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-          <circle cx="8" cy="8" r="2.25"/>
+          <mask id="gear-bore">
+            <rect width="16" height="16" fill="white"></rect>
+            <circle cx="8" cy="8" r="2.25" fill="black"></circle>
+          </mask>
+          <g mask="url(#gear-bore)">
+            <circle cx="8" cy="8" r="5.25"></circle>
+            <rect x="6.6" y="1" width="2.8" height="14" rx="0.9"></rect>
+            <rect x="1" y="6.6" width="14" height="2.8" rx="0.9"></rect>
+            <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(45 8 8)"></rect>
+            <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(-45 8 8)"></rect>
+          </g>
         </svg>
       </button>
     </div>
