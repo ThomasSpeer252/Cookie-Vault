@@ -31,21 +31,33 @@ const tempSite: Record<string, SiteProfile> = {
     }
 };
 
+export function getSiteProfile(domain: string): SiteProfile {
+    return tempSite[domain] ?? {
+        website: domain,
+        duration: 'Unknown',
+        safetyScore: 0,
+        securityStatus: 'No data',
+        permissions: 'Unknown',
+        cookies: [],
+    };
+}
+
+export function hasSiteProfileData(domain: string): boolean {
+    return domain in tempSite;
+}
+
 export function renderSiteDetails(domain: string, onBack: () => void) {
     const appContainer = document.getElementById('app');
     if (!appContainer) return;
 
-    // If Site Profile doesn't load, Error
-    // 9:18: Placeholder for google.com works specifically. All others bring up error page
-    const details = tempSite[domain] || {
-        website: domain,
+    const details = getSiteProfile(domain);
+    const displayDetails = hasSiteProfileData(domain) ? details : {
+        ...details,
         duration: 'Error',
         safetyScore: 0,
         securityStatus: 'Error',
         permissions: 'Error',
-        cookies: [
-            { name: 'Error', flags: [], expires: '0/0/0' }
-        ]
+        cookies: [{ name: 'Error', flags: [], expires: '0/0/0' }],
     };
 
     appContainer.innerHTML = `
@@ -55,7 +67,7 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
         <header class="card-header">
           <div class="header-title">
             <span class="mono-label">COOKIES —</span>
-            <span class="domain-badge">${details.website}</span>
+            <span class="domain-badge">${displayDetails.website}</span>
           </div>
           <button id="close-details-btn" class="icon-btn close-btn" title="Close">✕</button>
         </header>
@@ -68,7 +80,7 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
           </div>
             <div class="cookie-list-container">
               <div class="table-body">
-                ${details.cookies.map(cookie => `
+                ${displayDetails.cookies.map(cookie => `
                   <div class="cookie-row">
                     <div class="cookie-meta">
                       <span class="cookie-name">${cookie.name}</span>
@@ -113,23 +125,23 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
         <div class="profile-grid">
           <div class="profile-row">
             <span class="profile-label">Website</span>
-            <span class="profile-value">${details.website}</span>
+            <span class="profile-value">${displayDetails.website}</span>
           </div>
           <div class="profile-row">
             <span class="profile-label">Duration</span>
-            <span class="profile-value">${details.duration}</span>
+            <span class="profile-value">${displayDetails.duration}</span>
           </div>
           <div class="profile-row">
             <span class="profile-label">Safety Score</span>
-            <span class="profile-value score-badge">${details.safetyScore} / 100</span>
+            <span class="profile-value score-badge">${displayDetails.safetyScore} / 100</span>
           </div>
           <div class="profile-row">
             <span class="profile-label">Security</span>
-            <span class="profile-value status-green">${details.securityStatus}</span>
+            <span class="profile-value status-green">${displayDetails.securityStatus}</span>
           </div>
           <div class="profile-row">
             <span class="profile-label">Permissions</span>
-            <span class="profile-value">${details.permissions}</span>
+            <span class="profile-value">${displayDetails.permissions}</span>
           </div>
         </div>
       </section>

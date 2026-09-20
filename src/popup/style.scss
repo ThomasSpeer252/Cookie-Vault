@@ -234,7 +234,63 @@ body {
   }
 }
 
-// Settings page visuals
+// Site info (read-only) and settings page visuals
+
+.site-info-view {
+  .info-hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-1);
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+
+      &.safe {
+        background-color: var(--accent-green);
+      }
+
+      &.unsafe {
+        background-color: var(--accent-red);
+      }
+    }
+
+    .info-domain {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      margin: 0;
+    }
+
+    .info-status {
+      font-size: 12px;
+      margin: 2px 0 0;
+      font-family: var(--font-sans);
+
+      &.status-red {
+        color: var(--accent-red);
+      }
+
+      &.status-green {
+        color: var(--accent-green);
+      }
+    }
+  }
+
+  .info-footnote {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-family: var(--font-sans);
+    margin: 12px 0 0;
+  }
+}
 
 .site-details-view {
   display: flex;
