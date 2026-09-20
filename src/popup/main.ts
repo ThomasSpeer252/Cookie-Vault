@@ -1,5 +1,4 @@
 import './style.scss';
-import { renderSiteInfo } from './site_info';
 import { renderSiteDetails } from './site_settings';
 import { renderSettings } from './main_settings';
 
@@ -67,16 +66,8 @@ function renderSiteList() {
         <span class="site-name">${site.name}</span>
       </div>
       
-      <!-- Buttons to the right of each website (info, settings, vault) -->
+      <!-- Buttons to the right of each website (settings, vault) -->
       <div class="button-group">
-        <!-- Info -->
-        <button type="button" class="icon-btn" data-action="info-site" title="Site Info" data-site="${site.name}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4" />
-            <path d="M8 7v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-            <circle cx="8" cy="5" r="0.8" fill="currentColor" />
-          </svg>
-        </button>
 
         <!-- Settings -->
         <button class="icon-btn" data-action="settings-site" title="Site Settings" data-site="${site.name}">
@@ -120,22 +111,6 @@ function renderSiteList() {
             }
         })
     })
-
-    container.querySelectorAll('[data-action="info-site"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const button = e.currentTarget as HTMLButtonElement;
-            const domain = button.getAttribute('data-site');
-            const siteObj = SITES.find(s => s.name === domain);
-
-            if (domain) {
-                renderSiteInfo(domain, restoreHomeView, siteObj
-                    ? { safe: siteObj.safe, isVaulted: siteObj.isVaulted }
-                    : undefined);
-            }
-        });
-    });
 
     container.querySelectorAll('[data-action="settings-site"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
