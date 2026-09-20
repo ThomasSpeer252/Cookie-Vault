@@ -69,7 +69,7 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
             <span class="mono-label">COOKIES —</span>
             <span class="domain-badge">${displayDetails.website}</span>
           </div>
-          <button id="close-details-btn" class="icon-btn close-btn" title="Close">✕</button>
+          <button class="icon-btn" data-action="close-details" title="Close">✕</button>
         </header>
 
         <div class="cookies-table">
@@ -90,19 +90,19 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
                     </div>
                     <div class="cookie-actions">
                       <span class="cookie-expires">${cookie.expires}</span>
-                      <div class="row-btns">
-                        <button class="icon-btn row-btn" title="Lock Cookie">
+                      <div class="button-group" data-density="compact">
+                        <button class="icon-btn" data-action="lock-cookie" title="Lock Cookie">
                           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                             <rect x="3" y="7" width="10" height="7" rx="1.5"/>
                             <path d="M5 7V4.5a3 3 0 0 1 6 0V7"/>
                           </svg>
                         </button>
-                        <button class="icon-btn row-btn" title="Edit Cookie">
+                        <button class="icon-btn" data-action="edit-cookie" title="Edit Cookie">
                           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
                             <path d="M11 2l3 3-9 9H2v-3l9-9z"/>
                           </svg>
                         </button>
-                        <button class="icon-btn row-btn delete-btn" title="Delete Cookie">
+                        <button class="icon-btn" data-action="delete-cookie" title="Delete Cookie">
                           <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
                             <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
                           </svg>
@@ -149,5 +149,5 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
   `;
 
     //9/18: DIDNT FINISH YET. Back button doesn't actually undo properly yet
-    document.getElementById('close-details-btn')?.addEventListener('click', onBack);
+    appContainer.querySelector('[data-action="close-details"]')?.addEventListener('click', onBack);
 }

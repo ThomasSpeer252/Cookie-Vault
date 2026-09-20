@@ -69,9 +69,9 @@ function renderSiteList() {
       </div>
       
       <!-- Buttons to the right of each website (info, settings, vault) -->
-      <div class="action-group">
+      <div class="button-group">
         <!-- Info -->
-        <button type="button" class="icon-btn info-btn" title="Site Info" data-site="${site.name}">
+        <button type="button" class="icon-btn" data-action="info-site" title="Site Info" data-site="${site.name}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
             <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.4" />
             <path d="M8 7v5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
@@ -80,7 +80,7 @@ function renderSiteList() {
         </button>
 
         <!-- Settings -->
-        <button class="icon-btn settings-btn" title="Site Settings" data-site="${site.name}">
+        <button class="icon-btn" data-action="settings-site" title="Site Settings" data-site="${site.name}">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
             <mask id="gear-bore">
               <rect width="16" height="16" fill="white" />
@@ -97,8 +97,8 @@ function renderSiteList() {
         </button>
         
         <!-- Delete all site cookies -->
-        <button class="icon-btn delete-btn" title="Delete Site Cookies">
-          <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
+        <button class="icon-btn" data-action="delete-site" title="Delete Site Cookies">
+          <svg width="14" height="14" viewBox="0 0 13 13" fill="none">
             <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
         </button>
@@ -122,7 +122,7 @@ function renderSiteList() {
         })
     })
 
-    container.querySelectorAll('.info-btn').forEach(btn => {
+    container.querySelectorAll('[data-action="info-site"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -138,7 +138,7 @@ function renderSiteList() {
         });
     });
 
-    container.querySelectorAll('.settings-btn').forEach(btn => {
+    container.querySelectorAll('[data-action="settings-site"]').forEach(btn => {
         btn.addEventListener('click', (e) => {
             const button = e.currentTarget as HTMLButtonElement;
             const domain = button.getAttribute('data-site');

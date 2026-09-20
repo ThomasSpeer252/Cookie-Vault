@@ -29,7 +29,7 @@ export function renderSiteInfo(
             <span class="mono-label">SITE INFO —</span>
             <span class="domain-badge">${domain}</span>
           </div>
-          <button type="button" id="close-info-btn" class="icon-btn close-btn" title="Close">✕</button>
+          <button type="button" class="icon-btn" data-action="close-info" title="Close">✕</button>
         </header>
 
         <div class="info-hero">
@@ -72,5 +72,5 @@ export function renderSiteInfo(
     </div>
   `;
 
-    document.getElementById('close-info-btn')?.addEventListener('click', onBack);
+    appContainer.querySelector('[data-action="close-info"]')?.addEventListener('click', onBack);
 }

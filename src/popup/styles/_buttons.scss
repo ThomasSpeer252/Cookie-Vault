@@ -1,0 +1,51 @@
+// Every icon-only action shares one visual treatment. Behavior is identified
+// with data-action attributes instead of additional styling classes.
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--icon-button-padding, 4px);
+  opacity: var(--icon-button-opacity, 1);
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, opacity 0.15s ease;
+
+  &[data-action^='info'] {
+    color: var(--accent-blue);
+  }
+
+  &:hover {
+    background: var(--surface-3);
+    opacity: 1;
+  }
+
+  &[data-action^='delete']:hover {
+    color: var(--accent-red);
+  }
+
+  &[data-action^='close'] {
+    padding: 2px 6px;
+    font-size: 14px;
+
+    &:hover {
+      color: var(--text-primary);
+    }
+  }
+}
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &[data-density='compact'] {
+    gap: 2px;
+    --icon-button-padding: 3px;
+    --icon-button-opacity: 0.6;
+    --icon-button-hover-color: var(--accent-blue);
+  }
+}
