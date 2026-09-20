@@ -90,8 +90,17 @@ body {
     .title {
       font-family: var(--font-sans);
       font-weight: 600;
-      font-size: 14px;
+      font-size: 13px;
       color: var(--text-primary);
+      letter-spacing: -0.02em;
+      margin-bottom: 3px;
+    }
+
+    .version-number {
+      font-size: 9px;
+      color: var(--text-muted);
+      font-family: var(--sans-mono);
+      letter-spacing: 0.08em;
     }
   }
 
