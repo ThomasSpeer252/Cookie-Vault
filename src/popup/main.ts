@@ -1,6 +1,7 @@
 import './style.scss';
 import { renderSiteInfo } from './site_info';
 import { renderSiteDetails } from './site_settings';
+import { renderSettings } from './main_settings';
 
 interface SiteInfo {
     name: string;
@@ -166,10 +167,12 @@ function bindHomeEventListeners() {
     const searchInput = document.getElementById('site-search');
     const vaultCheck = document.getElementById('filter-vaulted');
     const unvaultCheck = document.getElementById('filter-unvaulted');
+    const settingsBtn = document.getElementById('settings-btn');
 
     searchInput?.addEventListener('input', () => renderSiteList());
     vaultCheck?.addEventListener('change', () => renderSiteList());
     unvaultCheck?.addEventListener('change', () => renderSiteList());
+    settingsBtn?.addEventListener('click', () => renderSettings(restoreHomeView));
 }
 
 // Search Bar

@@ -4,6 +4,7 @@
   --surface-1: #161822;
   --surface-2: #1e202e;
   --surface-3: #282a3d;
+  --surface-4: #363746;
   --border-1: #2a2d3d;
   --border-2: #36394e;
 
@@ -128,6 +129,56 @@ body {
       color: var(--accent-blue);
     }
   }
+}
+
+.switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  
+  &:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 2px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+  }
+}
+
+input:checked + .slider {
+  background-color: #34d399;
+}
+
+input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+.slider.round {
+  border-radius: 34px;
+}
+
+.slider.round:before {
+  border-radius: 50%;
 }
 
 .search-bar {
@@ -528,3 +579,84 @@ body {
       }
     }
   }
+
+// Settings Grid
+.settings-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  .settings-row {
+    display: flex;
+    flex-direction: row;
+    border-bottom: 1px solid var(--border-1);
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 4px;
+
+    .settings-info {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      font-size: 14px;
+      padding-bottom: 4px;
+      gap: 4px;
+
+      .settings-label {
+        font-family: var(--font-sans);
+      }
+
+      .settings-minor {
+        font-size: 12px;
+        color: var(--text-muted);
+      }
+    }
+
+    .settings-view-btn {
+      display: block;
+      background-color: var(--surface-3);
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      border-width: 1px;
+      border-style: solid;
+      border-color: var(--border-2);
+      border-radius: 8px;
+      height: 28px;
+      width: 66px;
+      cursor: pointer;
+      transition-duration: .1s;
+
+      &:hover {
+        background-color: var(--surface-4);
+      }
+
+      &:active {
+        background-color: var(--surface-3);
+      }
+    }
+  }
+}
+
+.unvault-all-btn {
+  display: flex;
+  background-color: var(--surface-2);
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-sans);
+  color: var(--accent-blue);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--accent-blue);
+  border-radius: 8px;
+  height: 36px;
+  cursor: pointer;
+  transition-duration: .1s;
+  
+  &:hover {
+        background-color: var(--surface-4);
+      }
+
+  &:active {
+    background-color: var(--surface-3);
+  }
+}
