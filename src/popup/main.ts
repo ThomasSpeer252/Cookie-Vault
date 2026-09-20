@@ -60,11 +60,10 @@ function renderSiteList() {
 
         // Green = no issues found from website's cookies. Red = flagged
         // 9/17: We may want to do a spectrum (i.e. add Yellow if there's minor concerns).
-        const dotColor = site.safe ? 'var(--accent-green)' : 'var(--accent-red)';
 
         card.innerHTML = `
       <div class="site-info">
-        <span class="status-dot" style="background-color: ${dotColor}"></span>
+        <span class="status-dot status-dot--${site.safe ? 'safe' : 'unsafe'}"></span>
         <span class="site-name">${site.name}</span>
       </div>
       
