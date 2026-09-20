@@ -76,7 +76,6 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
           <div class="table-header">
             <span>NAME / FLAGS</span>
             <span class="header-expires">EXPIRES</span>
-            <span class="header-options">Options</span>
           </div>
             <div class="cookie-list-container">
               <div class="table-body">
