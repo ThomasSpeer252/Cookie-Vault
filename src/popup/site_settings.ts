@@ -103,8 +103,8 @@ export function renderSiteDetails(domain: string, onBack: () => void) {
                           </svg>
                         </button>
                         <button class="icon-btn row-btn delete-btn" title="Delete Cookie">
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
-                            <path d="M2 4h12M5 4V2.5A.5.5 0 0 1 5.5 2h5a.5.5 0 0 1 .5.5V4M6 7v5M10 7v5"/>
+                          <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
+                            <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
                           </svg>
                         </button>
                       </div>
