@@ -1,36 +1,15 @@
 import './style.scss';
-import { renderSiteDetails } from './site_settings';
+import { getCookieSites, type CookieSite } from './cookie_data';
+import { escapeHtml } from './cookie_format';
 import { renderSettings } from './main_settings';
+import { renderSiteDetails } from './site_settings';
 
-interface SiteInfo {
-    name: string;
-    safe: boolean;
-    isVaulted: boolean;
-}
-
-// 9/17: Temporary hardcoded list of websites
-const SITES: SiteInfo[] = [
-    { name: "google.com", safe: true, isVaulted: false },
-    { name: "github.com", safe: true, isVaulted: false },
-    { name: "Suspicious.org", safe: false, isVaulted: false },
-    { name: "evil_ram.net", safe: false, isVaulted: false },
-    { name: "Testing scrollbar 1", safe: true, isVaulted: true },
-    { name: "Testing scrollbar 2", safe: true, isVaulted: true },
-    { name: "Testing scrollbar 3", safe: true, isVaulted: false },
-    { name: "Testing scrollbar 4", safe: true, isVaulted: false },
-    { name: "Sneaky Trojan", safe: true, isVaulted: false },
-    { name: "Testing scrollbar 5", safe: true, isVaulted: false },
-    { name: "Long name aaaaaaaaaaaaaaaaaaaaaaaaa", safe: true, isVaulted: false },
-    { name: "Zac needs Sleep badly", safe: true, isVaulted: true }
-];
-
-// For returning from settings
-// 9/18: DIDNT FINISH YET
+let sites: CookieSite[] = [];
+let isLoading = true;
+let loadError: string | null = null;
 let initialAppHTML = '';
 
 function renderSiteList() {
-
-    // Get site list, search bar, and vault/unvault filter values
     const container = document.getElementById('site-list');
     const searchInput = document.getElementById('site-search') as HTMLInputElement;
     const vaultCheck = document.getElementById('filter-vaulted') as HTMLInputElement;
@@ -38,93 +17,104 @@ function renderSiteList() {
 
     if (!container) return;
 
-    // Turn the searchbar and filters into usable input.
+    if (isLoading) {
+        container.innerHTML = '<p class="list-state">Reading browser cookies…</p>';
+        return;
+    }
+
+    if (loadError) {
+        container.innerHTML = `<p class="list-state list-state--error">${escapeHtml(loadError)}</p>`;
+        return;
+    }
+
     const filterText = searchInput?.value.toLowerCase() || '';
-    const showVaulted = vaultCheck ? vaultCheck.checked : true;
-    const showUnvaulted = vaultCheck ? unvaultCheck.checked : true;
-
-    container.innerHTML = '';
-
-    // List filter
-    const filtered = SITES.filter(site => {
-        const matchesText = site.name.toLowerCase().includes(filterText);
+    const showVaulted = vaultCheck?.checked ?? true;
+    const showUnvaulted = unvaultCheck?.checked ?? true;
+    const filteredSites = sites.filter(site => {
+        const matchesText = site.domain.toLowerCase().includes(filterText);
         const matchesCategory = (site.isVaulted && showVaulted) || (!site.isVaulted && showUnvaulted);
         return matchesText && matchesCategory;
     });
 
-    // Iterate each filtered site for it' icons (status, name, info, settings, vault)
-    filtered.forEach(site => {
+    if (filteredSites.length === 0) {
+        container.innerHTML = `<p class="list-state">${sites.length === 0
+            ? 'No browser cookies found.'
+            : 'No domains match the current filters.'}</p>`;
+        return;
+    }
+
+    container.innerHTML = '';
+
+    for (const [index, site] of filteredSites.entries()) {
         const card = document.createElement('div');
         card.className = 'site-card';
-
-        // Green = no issues found from website's cookies. Red = flagged
-        // 9/17: We may want to do a spectrum (i.e. add Yellow if there's minor concerns).
+        const secureStatus = site.allSecure
+            ? 'All cookies have the Secure flag'
+            : 'Contains cookies without the Secure flag';
+        const domain = escapeHtml(site.domain);
 
         card.innerHTML = `
-      <div class="site-info">
-        <span class="status-dot status-dot--${site.safe ? 'safe' : 'unsafe'}"></span>
-        <span class="site-name">${site.name}</span>
-      </div>
-      
-      <!-- Buttons to the right of each website (settings, vault) -->
-      <div class="button-group">
+          <div class="site-info">
+            <span class="status-dot status-dot--${site.allSecure ? 'safe' : 'unsafe'}"
+              title="${secureStatus}"></span>
+            <span class="site-name" title="${domain}">${domain}</span>
+            <span class="site-cookie-count">${site.cookies.length}</span>
+          </div>
 
-        <!-- Settings -->
-        <button class="icon-btn" data-action="settings-site" title="Site Settings" data-site="${site.name}">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-            <mask id="gear-bore">
-              <rect width="16" height="16" fill="white" />
-              <circle cx="8" cy="8" r="2.25" fill="black" />
-            </mask>
-            <g mask="url(#gear-bore)">
-              <circle cx="8" cy="8" r="5.25" />
-              <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" />
-              <rect x="1" y="6.6" width="14" height="2.8" rx="0.9" />
-              <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(45 8 8)" />
-              <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(-45 8 8)" />
-            </g>
-          </svg>
-        </button>
-        
-        <!-- Delete all site cookies -->
-        <button class="icon-btn" data-action="delete-site" title="Delete Site Cookies">
-          <svg width="14" height="14" viewBox="0 0 13 13" fill="none">
-            <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
-          </svg>
-        </button>
-      </div>
-    `;
+          <div class="button-group">
+            <button type="button" class="icon-btn" data-action="settings-site"
+              title="Site Cookies" data-site="${domain}">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <mask id="gear-bore-${index}">
+                  <rect width="16" height="16" fill="white" />
+                  <circle cx="8" cy="8" r="2.25" fill="black" />
+                </mask>
+                <g mask="url(#gear-bore-${index})">
+                  <circle cx="8" cy="8" r="5.25" />
+                  <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" />
+                  <rect x="1" y="6.6" width="14" height="2.8" rx="0.9" />
+                  <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(45 8 8)" />
+                  <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(-45 8 8)" />
+                </g>
+              </svg>
+            </button>
+
+            <button type="button" class="icon-btn" data-action="delete-site"
+              title="Delete Site Cookies" data-site="${domain}">
+              <svg width="14" height="14" viewBox="0 0 13 13" fill="none">
+                <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+            </button>
+          </div>
+        `;
 
         container.appendChild(card);
-    });
+    }
 
-    // Update vault button on click
-    container.querySelectorAll('.vault-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const button = e.currentTarget as HTMLButtonElement;
-            const domain = button.getAttribute('data-site');
-            const siteObj = SITES.find(s => s.name === domain);
-
-            if (siteObj) {
-                siteObj.isVaulted = !siteObj.isVaulted;
-                renderSiteList();
-            }
-        })
-    })
-
-    container.querySelectorAll('[data-action="settings-site"]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const button = e.currentTarget as HTMLButtonElement;
-            const domain = button.getAttribute('data-site');
-
-            if (domain) {
-                renderSiteDetails(domain, restoreHomeView);
-            }
-        })
+    container.querySelectorAll('[data-action="settings-site"]').forEach(button => {
+        button.addEventListener('click', event => {
+            const domain = (event.currentTarget as HTMLButtonElement).dataset.site;
+            const site = sites.find(candidate => candidate.domain === domain);
+            if (site) renderSiteDetails(site, restoreHomeView);
+        });
     });
 }
 
-//9/18: DIDNT FINISH YET. Exiting popup didn't save and stuck on blank screen
+async function loadCookies() {
+    isLoading = true;
+    loadError = null;
+    renderSiteList();
+
+    try {
+        sites = await getCookieSites();
+    } catch (error) {
+        loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
+    } finally {
+        isLoading = false;
+        renderSiteList();
+    }
+}
+
 function restoreHomeView() {
     const appContainer = document.getElementById('app');
     if (!appContainer) return;
@@ -134,25 +124,17 @@ function restoreHomeView() {
     bindHomeEventListeners();
 }
 
-// save everything for opening/returning a popup
-//9/18: DIDNT FINISH YET. Exiting popup didn't save and stuck on blank screen
 function bindHomeEventListeners() {
-    const searchInput = document.getElementById('site-search');
-    const vaultCheck = document.getElementById('filter-vaulted');
-    const unvaultCheck = document.getElementById('filter-unvaulted');
-    const settingsBtn = document.getElementById('settings-btn');
-
-    searchInput?.addEventListener('input', () => renderSiteList());
-    vaultCheck?.addEventListener('change', () => renderSiteList());
-    unvaultCheck?.addEventListener('change', () => renderSiteList());
-    settingsBtn?.addEventListener('click', () => renderSettings(restoreHomeView));
+    document.getElementById('site-search')?.addEventListener('input', renderSiteList);
+    document.getElementById('filter-vaulted')?.addEventListener('change', renderSiteList);
+    document.getElementById('filter-unvaulted')?.addEventListener('change', renderSiteList);
+    document.getElementById('settings-btn')?.addEventListener('click', () => renderSettings(restoreHomeView));
 }
 
-// Search Bar
 document.addEventListener('DOMContentLoaded', () => {
     const appContainer = document.getElementById('app');
-    if (appContainer) {initialAppHTML = appContainer.innerHTML};
+    if (appContainer) initialAppHTML = appContainer.innerHTML;
 
-    renderSiteList();
     bindHomeEventListeners();
+    void loadCookies();
 });
