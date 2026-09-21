@@ -13,6 +13,7 @@ export interface Settings {
 // TODO: needs chrome.storage read for persistence/allowing user to save settings
 function getSettings(): Settings {
     // placeholder defaults
+    return {}
 }
 
 // TODO: needs chrome.storage write
