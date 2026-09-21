@@ -33,7 +33,7 @@ export function renderSettings(onBack: () => void) {
           <div class="header-title">
             <span class="mono-label">SETTINGS</span>
           </div>          
-          <button id="close-settings-btn" class="icon-btn close-btn" title="Close">✕</button>
+          <button class="icon-btn" data-action="close-settings" title="Close">✕</button>
         </header>
 
         <div class="settings-grid info-grid">
@@ -96,8 +96,7 @@ export function renderSettings(onBack: () => void) {
     </div>
   `;
 
-    document.getElementById('close-settings-btn')?.addEventListener('click', onBack);
+    appContainer.querySelector('[data-action="close-settings"]')?.addEventListener('click', onBack);
 
-    // TODO: bind listeners for individual controls here,
-    // each one updating `settings` and calling saveSettings(settings)
+    // TODO: bind listeners for individual controls and persist their values.
 }
