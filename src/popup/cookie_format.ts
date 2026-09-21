@@ -14,6 +14,8 @@ export function getCookieFlags(cookie: chrome.cookies.Cookie): CookieFlag[] {
         flags.push({ label: 'SS:S', kind: 'same-site' });
     } else if (cookie.sameSite === 'lax') {
         flags.push({ label: 'SS:L', kind: 'same-site' });
+    } else if (cookie.sameSite === 'no_restriction') {
+        flags.push({ label: 'SS: N', kind: 'same-site' });
     }
 
     return flags;
