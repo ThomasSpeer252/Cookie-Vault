@@ -7,8 +7,12 @@ export interface CookieFlag {
 export function getCookieFlags(cookie: chrome.cookies.Cookie): CookieFlag[] {
     const flags: CookieFlag[] = [];
 
-    if (cookie.secure) flags.push({ label: 'Secure', kind: 'secure' });
-    if (cookie.httpOnly) flags.push({ label: 'HttpOnly', kind: 'http-only' });
+    if (cookie.secure) {
+        flags.push({ label: 'SEC', kind: 'secure', title: 'Secure' });
+    }
+    if (cookie.httpOnly) {
+        flags.push({ label: 'HTTP', kind: 'http-only', title: 'HttpOnly' });
+    }
     if (cookie.partitionKey) flags.push({ label: 'Partitioned', kind: 'partitioned' });
 
     if (cookie.sameSite === 'strict') {
