@@ -7,7 +7,9 @@ const PLACEHOLDER_SAFETY_SCORE = 94;
 
 function renderCookie(cookie: chrome.cookies.Cookie): string {
     const flags = getCookieFlags(cookie)
-        .map(flag => `<span class="flag-badge flag-badge--${flag.kind}">${flag.label}</span>`)
+        .map(flag => `<span class="flag-badge flag-badge--${flag.kind}"${flag.title
+            ? ` title="${escapeHtml(flag.title)}"`
+            : ''}>${flag.label}</span>`)
         .join('');
     const expiration = formatCookieExpiration(cookie);
     const name = cookie.name || '(unnamed)';

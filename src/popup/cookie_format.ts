@@ -1,6 +1,7 @@
 export interface CookieFlag {
     label: string;
     kind: 'secure' | 'http-only' | 'same-site' | 'partitioned';
+    title?: string;
 }
 
 export function getCookieFlags(cookie: chrome.cookies.Cookie): CookieFlag[] {
@@ -11,11 +12,11 @@ export function getCookieFlags(cookie: chrome.cookies.Cookie): CookieFlag[] {
     if (cookie.partitionKey) flags.push({ label: 'Partitioned', kind: 'partitioned' });
 
     if (cookie.sameSite === 'strict') {
-        flags.push({ label: 'SS:S', kind: 'same-site' });
+        flags.push({ label: 'SS:S', kind: 'same-site', title: 'SameSite=Strict' });
     } else if (cookie.sameSite === 'lax') {
-        flags.push({ label: 'SS:L', kind: 'same-site' });
+        flags.push({ label: 'SS:L', kind: 'same-site', title: 'SameSite=Lax' });
     } else if (cookie.sameSite === 'no_restriction') {
-        flags.push({ label: 'SS: N', kind: 'same-site' });
+        flags.push({ label: 'SS: N', kind: 'same-site', title: 'SameSite=None' });
     }
 
     return flags;
