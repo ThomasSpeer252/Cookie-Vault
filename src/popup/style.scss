@@ -474,15 +474,19 @@ input:checked + .slider:before {
           border-radius: 4px;
           font-weight: 600;
 
-          &--secure,
           &--partitioned {
             color: var(--badge-blue);
             background: rgba(96, 165, 250, 0.12);
           }
 
-          &--http-only {
+          &--secure {
             color: var(--badge-green);
             background: rgba(52, 211, 153, 0.12);
+          }
+
+          &--http-only {
+            color: var(--badge-blue);
+            background: rgba(96, 165, 250, 0.12);
           }
 
           &--same-site {
