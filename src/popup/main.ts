@@ -7,7 +7,6 @@ import { renderSiteDetails } from './site_settings';
 let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
-let initialAppHTML = '';
 
 function renderSiteList() {
     const container = document.getElementById('site-list');
@@ -95,7 +94,7 @@ function renderSiteList() {
         button.addEventListener('click', event => {
             const domain = (event.currentTarget as HTMLButtonElement).dataset.site;
             const site = sites.find(candidate => candidate.domain === domain);
-            if (site) renderSiteDetails(site, restoreHomeView);
+            if (site) renderSiteDetails(site);
         });
     });
 }
@@ -115,26 +114,14 @@ async function loadCookies() {
     }
 }
 
-function restoreHomeView() {
-    const appContainer = document.getElementById('app');
-    if (!appContainer) return;
-
-    appContainer.innerHTML = initialAppHTML;
-    renderSiteList();
-    bindHomeEventListeners();
-}
-
 function bindHomeEventListeners() {
     document.getElementById('site-search')?.addEventListener('input', renderSiteList);
     document.getElementById('filter-vaulted')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-unvaulted')?.addEventListener('change', renderSiteList);
-    document.getElementById('settings-btn')?.addEventListener('click', () => renderSettings(restoreHomeView));
+    document.getElementById('settings-btn')?.addEventListener('click', renderSettings);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const appContainer = document.getElementById('app');
-    if (appContainer) initialAppHTML = appContainer.innerHTML;
-
     bindHomeEventListeners();
     void loadCookies();
 });

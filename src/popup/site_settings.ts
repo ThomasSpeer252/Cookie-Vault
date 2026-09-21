@@ -1,5 +1,6 @@
 import type { CookieSite } from './cookie_data';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
+import { openOverlay } from './overlay';
 
 const PLACEHOLDER_SECURITY = 'No Concerns Found';
 const PLACEHOLDER_SAFETY_SCORE = 94;
@@ -40,10 +41,7 @@ function renderCookie(cookie: chrome.cookies.Cookie): string {
     `;
 }
 
-export function renderSiteDetails(site: CookieSite, onBack: () => void) {
-    const appContainer = document.getElementById('app');
-    if (!appContainer) return;
-
+export function renderSiteDetails(site: CookieSite) {
     const secureCount = site.cookies.filter(cookie => cookie.secure).length;
     const httpOnlyCount = site.cookies.filter(cookie => cookie.httpOnly).length;
 
@@ -63,7 +61,7 @@ export function renderSiteDetails(site: CookieSite, onBack: () => void) {
     `;
     */
 
-    appContainer.innerHTML = `
+    const overlay = openOverlay(`
       <div class="site-details-view">
         <section class="detail-card cookies-card">
           <header class="card-header">
@@ -114,7 +112,10 @@ export function renderSiteDetails(site: CookieSite, onBack: () => void) {
           </div>
         </section>
       </div>
-    `;
+    `);
 
-    appContainer.querySelector('[data-action="close-details"]')?.addEventListener('click', onBack);
+    if (!overlay) return;
+    const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-details"]');
+    closeButton?.addEventListener('click', overlay.close);
+    closeButton?.focus();
 }

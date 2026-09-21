@@ -43,6 +43,23 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.view-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  background: rgba(15, 17, 23, 0.68);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  .site-details-view {
+    width: 100%;
+    background: transparent;
+  }
 }
 
 // Separate the structure and website list by header/body

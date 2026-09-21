@@ -1,3 +1,5 @@
+import { openOverlay } from './overlay';
+
 // Main panel: General settings
 export interface Settings {
     // TODO: replace with actual app-level settings fields
@@ -20,13 +22,10 @@ function getSettings(): Settings {
 function saveSettings(settings: Settings) {
 }
 
-export function renderSettings(onBack: () => void) {
-    const appContainer = document.getElementById('app');
-    if (!appContainer) return;
+export function renderSettings() {
+    getSettings();
 
-    const settings = getSettings();
-
-    appContainer.innerHTML = `
+    const overlay = openOverlay(`
     <div class="site-details-view settings-view">
       <section class="detail-card settings-card">
         <header class="card-header">
@@ -94,9 +93,12 @@ export function renderSettings(onBack: () => void) {
         </div>
       </section>
     </div>
-  `;
+  `);
 
-    appContainer.querySelector('[data-action="close-settings"]')?.addEventListener('click', onBack);
+    if (!overlay) return;
+    const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
+    closeButton?.addEventListener('click', overlay.close);
+    closeButton?.focus();
 
     // TODO: bind listeners for individual controls and persist their values.
 }
