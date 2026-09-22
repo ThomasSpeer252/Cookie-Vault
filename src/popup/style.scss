@@ -236,6 +236,10 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: space-between;
 
+  .pin-btn-on {
+    color: var(--accent-amber);
+  }
+
   // Left icons: Status dot and name
 
   .site-info {
@@ -278,10 +282,9 @@ input:checked + .slider:before {
       font-size: 10px;
     }
   }
-
 }
 
-// Site info (read-only) and settings page visuals
+// Site info and settings page visuals
 
 .site-info-view {
   .info-hero {
@@ -404,7 +407,6 @@ input:checked + .slider:before {
     font-weight: 600;
     background-color: var(--text-permission-green);
     border: 3px solid var(--text-permission-green);
-
   }
 }
 

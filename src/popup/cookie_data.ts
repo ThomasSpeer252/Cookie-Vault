@@ -3,6 +3,7 @@ export interface CookieSite {
     cookies: chrome.cookies.Cookie[];
     allSecure: boolean;
     isVaulted: boolean;
+    isPinned: boolean;
 }
 
 function getDomainSortKey(domain: string): string {
@@ -37,6 +38,7 @@ export async function getCookieSites(): Promise<CookieSite[]> {
             allSecure: domainCookies.every(cookie => cookie.secure),
             // Vault persistence is not implemented, so real cookies start unvaulted.
             isVaulted: false,
+            isPinned: false,
         }))
         .sort((left, right) => {
             const baseDomainOrder = getDomainSortKey(left.domain)

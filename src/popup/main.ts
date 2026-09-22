@@ -42,7 +42,7 @@ async function renderSiteList() {
         const matchesText = site.domain.toLowerCase().includes(filterText);
         const matchesCategory = (site.isVaulted && showVaulted) || (!site.isVaulted && showUnvaulted);
         return matchesText && matchesCategory;
-    });
+    }).sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
 
     if (filteredSites.length === 0) {
         container.innerHTML = `<p class="list-state">${sites.length === 0
@@ -60,6 +60,7 @@ async function renderSiteList() {
             ? 'All cookies have the Secure flag'
             : 'Contains cookies without the Secure flag';
         const domain = escapeHtml(site.domain);
+        const pinned = site.isPinned ? ' site-card--pinned' : '';
 
         card.innerHTML = `
           <div class="site-info">
@@ -70,6 +71,13 @@ async function renderSiteList() {
           </div>
 
           <div class="button-group">
+            <button type="button" class="icon-btn ${pinned ? 'pin-btn-on' : ''}" data-action="pin-site"
+              title="${pinned ? 'Unpin Site' : 'Pin Site'}" data-site="${domain}">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+    <path d="M4 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5H10.5v3.636l1.205 1.808A.75.75 0 0 1 11.08 10H8.75v3.75a.75.75 0 0 1-1.5 0V10H4.92a.75.75 0 0 1-.624-1.166L5.5 7.026V3.25H4.75A.75.75 0 0 1 4 2.5Z"/>
+  </svg>
+            </button>
+            
             <button type="button" class="icon-btn" data-action="settings-site"
               title="Site Cookies" data-site="${domain}">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
@@ -98,6 +106,17 @@ async function renderSiteList() {
 
         container.appendChild(card);
     }
+
+    container.querySelectorAll('[data-action="pin-site"]').forEach(button => {
+        button.addEventListener('click', event => {
+            const domain = (event.currentTarget as HTMLButtonElement).dataset.site;
+            const site = sites.find(candidate => candidate.domain === domain);
+            if (site) {
+                site.isPinned = !site.isPinned;
+                void renderSiteList();
+            }
+        })
+    });
 
     container.querySelectorAll('[data-action="settings-site"]').forEach(button => {
         button.addEventListener('click', event => {
