@@ -8,13 +8,22 @@ let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
 
-function renderSiteList() {
+async function renderSiteList() {
     const container = document.getElementById('site-list');
+    if (!container) return;
+
+    // Check for permissions to view sites/cookies. Prompt if needed
+    const hasPermission = await chrome.permissions.contains({permissions: ['cookies'], origins: ['<all_urls>']});
+
+    if (!hasPermission) {
+        isLoading = false;
+        renderPermissionPrompt();
+        return;
+    }
+
     const searchInput = document.getElementById('site-search') as HTMLInputElement;
     const vaultCheck = document.getElementById('filter-vaulted') as HTMLInputElement;
     const unvaultCheck = document.getElementById('filter-unvaulted') as HTMLInputElement;
-
-    if (!container) return;
 
     if (isLoading) {
         container.innerHTML = '<p class="list-state">Reading browser cookies…</p>';
@@ -99,9 +108,43 @@ function renderSiteList() {
     });
 }
 
+function renderPermissionPrompt() {
+    const container = document.getElementById('site-list');
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="permission-prompt">
+            <p class="list-state">Cookie access permissions are required for the extension.</p>
+            <button type="button" id="grant-cookies-btn" class="grant-cookie-btn">
+                Click Here to Grant Cookie Access
+            </button>
+        </div>
+    `;
+
+    document.getElementById('grant-cookies-btn')?.addEventListener('click', async () => {
+        const granted = await chrome.permissions.request({
+            permissions: ['cookies'],
+            origins: ['<all_urls>']
+        });
+
+        if (granted) {void loadCookies();}
+    });
+}
+
 async function loadCookies() {
     isLoading = true;
     loadError = null;
+
+    // Check for permissions to view sites/cookies. Prompt if needed
+    const hasPermission = await chrome.permissions.contains({permissions: ['cookies'], origins: ['<all_urls>']});
+
+    if (!hasPermission) {
+        isLoading = false;
+        renderPermissionPrompt();
+        return;
+    }
+
+    // Continue to render sites if permissions apply
     renderSiteList();
 
     try {

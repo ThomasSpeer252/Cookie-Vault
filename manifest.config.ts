@@ -20,10 +20,10 @@ export default defineManifest({
   }],
   permissions: [
     'sidePanel',
-    'contentSettings',
-    'cookies',
+    'contentSettings'
   ],
-  host_permissions: ['<all_urls>'],
+  optional_permissions: ['cookies'],
+  optional_host_permissions: ['<all_urls>'],
   side_panel: {
     default_path: 'src/sidepanel/index.html',
   },

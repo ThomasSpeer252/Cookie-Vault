@@ -20,6 +20,8 @@
   --accent-amber: #fbbf24;
   --accent-red: #f87171;
 
+  --text-permission-green: #1d6e00;
+
   --badge-blue: #3a92ff;
   --badge-green: #2eb300;
   --badge-amber: #dc9d00;
@@ -386,6 +388,22 @@ input:checked + .slider:before {
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+
+  }
+}
+
+// permission button. Will replace the site cards when required
+.permission-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .grant-cookie-btn {
+    color: var(--text-permissions);
+    font-size: 16px;
+    font-weight: 600;
+    background-color: var(--text-permission-green);
+    border: 3px solid var(--text-permission-green);
 
   }
 }
