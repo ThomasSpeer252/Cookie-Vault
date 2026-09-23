@@ -24,6 +24,9 @@ async function renderSiteList() {
     const searchInput = document.getElementById('site-search') as HTMLInputElement;
     const vaultCheck = document.getElementById('filter-vaulted') as HTMLInputElement;
     const unvaultCheck = document.getElementById('filter-unvaulted') as HTMLInputElement;
+    const statusSafe = document.getElementById('filter-safe') as HTMLInputElement;
+    const statusFlagged = document.getElementById('filter-flagged') as HTMLInputElement;
+
 
     if (isLoading) {
         container.innerHTML = '<p class="list-state">Reading browser cookies…</p>';
@@ -38,10 +41,14 @@ async function renderSiteList() {
     const filterText = searchInput?.value.toLowerCase() || '';
     const showVaulted = vaultCheck?.checked ?? true;
     const showUnvaulted = unvaultCheck?.checked ?? true;
+    const showSafe = statusSafe?.checked ?? true;
+    const showFlagged = statusFlagged.checked ?? true;
+
     const filteredSites = sites.filter(site => {
         const matchesText = site.domain.toLowerCase().includes(filterText);
         const matchesCategory = (site.isVaulted && showVaulted) || (!site.isVaulted && showUnvaulted);
-        return matchesText && matchesCategory;
+        const matchesStatus = (site.allSecure && showSafe) || (!site.allSecure && showFlagged);
+        return matchesText && matchesCategory && matchesStatus;
     }).sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
 
     if (filteredSites.length === 0) {
@@ -180,6 +187,8 @@ function bindHomeEventListeners() {
     document.getElementById('site-search')?.addEventListener('input', renderSiteList);
     document.getElementById('filter-vaulted')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-unvaulted')?.addEventListener('change', renderSiteList);
+    document.getElementById('filter-safe')?.addEventListener('change', renderSiteList);
+    document.getElementById('filter-flagged')?.addEventListener('change', renderSiteList);
     document.getElementById('settings-btn')?.addEventListener('click', renderSettings);
 }
 
