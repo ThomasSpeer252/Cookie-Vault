@@ -1,28 +1,28 @@
+import { openOverlay } from './overlay';
+
 // Main panel: General settings
 
 // TODO: needs chrome.storage read for persistence/allowing user to save settings
 function getSettings(): Settings {
     // placeholder defaults
+    return {}
 }
 
 // TODO: needs chrome.storage write
 function saveSettings(settings: Settings) {
 }
 
-export function renderSettings(onBack: () => void) {
-    const appContainer = document.getElementById('app');
-    if (!appContainer) return;
+export function renderSettings() {
+    getSettings();
 
-    const settings = getSettings();
-
-    appContainer.innerHTML = `
+    const overlay = openOverlay(`
     <div class="site-details-view settings-view">
       <section class="detail-card settings-card">
         <header class="card-header">
           <div class="header-title">
             <span class="mono-label">SETTINGS</span>
           </div>          
-          <button id="close-settings-btn" class="icon-btn close-btn" title="Close">✕</button>
+          <button class="icon-btn" data-action="close-settings" title="Close">✕</button>
         </header>
 
         <div class="settings-grid info-grid">
@@ -83,7 +83,12 @@ export function renderSettings(onBack: () => void) {
         </div>
       </section>
     </div>
-  `;
+  `);
 
-    document.getElementById('close-settings-btn')?.addEventListener('click', onBack);
+    if (!overlay) return;
+    const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
+    closeButton?.addEventListener('click', overlay.close);
+    closeButton?.focus();
+
+    // TODO: bind listeners for individual controls and persist their values.
 }

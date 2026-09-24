@@ -1,0 +1,21 @@
+@mixin compact-scrollbar {
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    margin: 4px 0;
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--border-2);
+    border: 1px solid transparent;
+    border-radius: 9999px;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: var(--text-muted);
+    }
+  }
+}

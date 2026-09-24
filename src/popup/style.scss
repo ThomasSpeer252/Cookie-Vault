@@ -1,3 +1,6 @@
+@use './styles/buttons';
+@use './styles/mixins';
+
 // Extension colors that were taken from the figma draft
 :root {
   --bg-primary: #0f1117;
@@ -16,6 +19,8 @@
   --accent-blue: #60a5fa;
   --accent-amber: #fbbf24;
   --accent-red: #f87171;
+
+  --text-permission-green: #1d6e00;
 
   --badge-blue: #3a92ff;
   --badge-green: #2eb300;
@@ -40,6 +45,23 @@ body {
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.view-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  background: rgba(15, 17, 23, 0.68);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  .site-details-view {
+    width: 100%;
+    background: transparent;
+  }
 }
 
 // Separate the structure and website list by header/body
@@ -111,34 +133,6 @@ body {
   }
 }
 
-.icon-btn {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 4px;
-  color: var(--text-muted);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.15s ease;
-
-  &:hover {
-    background: var(--surface-3);
-    color: var(--text-secondary);
-  }
-
-  &.delete-btn {
-    &:hover {
-      color: var(--accent-red);
-    }
-    &.active {
-      border-color: var(--accent-red);
-      color: var(--accent-red);
-    }
-  }
-}
-
 .switch {
   position: relative;
   width: 36px;
@@ -160,7 +154,7 @@ body {
   bottom: 0;
   background-color: #ccc;
   transition: .4s;
-  
+
   &:before {
     position: absolute;
     content: "";
@@ -217,29 +211,19 @@ input:checked + .slider:before {
   gap: 8px;
   overflow-y: auto;
 
-  // Scrollbar customization:
-  // https://developer.mozilla.org/en-US/docs/Web/CSS/Reference/Selectors/::-webkit-scrollbar
+  @include mixins.compact-scrollbar;
+}
 
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
+.list-state {
+  margin: 24px 8px;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
 
-  &::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 4px 0;
-  }
-
-  // scrollbar color/shape
-  &::-webkit-scrollbar-thumb {
-    background-color: var(--border-2);
-    border-radius: 9999px;
-    border: 1px solid transparent;
-    transition: background-color 0.2s ease;
-
-    // highlight scrollbar on hover
-    &:hover {
-      background-color: var(--text-muted);
-    }
+  &--error {
+    color: var(--accent-red);
   }
 }
 
@@ -252,47 +236,55 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: space-between;
 
+  .pin-btn-on {
+    color: var(--accent-amber);
+  }
+
   // Left icons: Status dot and name
 
   .site-info {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
 
     .status-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       flex-shrink: 0;
-      box-shadow: 0 0 6px rgba(0, 0, 0, 0.3);
+
+      &--safe {
+        background-color: var(--accent-green);
+        box-shadow: rgba(52, 211, 153, 0.5) 0 0 5px;
+      }
+
+      &--unsafe {
+        background-color: var(--accent-red);
+        box-shadow: rgba(248, 113, 113, 0.5) 0 0 5px;
+      }
     }
 
     .site-name {
       font-size: 14px;
       color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-  }
 
-  // Right icons: info, settings, vault
-
-  .action-group {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-
-    .icon-btn {
-      padding: 4px;
-      width: 24px;
-      height: 24px;
-
-      &:hover {
-        color: var(--accent-blue);
-      }
+    .site-cookie-count {
+      flex-shrink: 0;
+      padding: 1px 5px;
+      color: var(--text-muted);
+      background: var(--surface-3);
+      border-radius: 9999px;
+      font-size: 10px;
     }
   }
 }
 
-// Site info (read-only) and settings page visuals
+// Site info and settings page visuals
 
 .site-info-view {
   .info-hero {
@@ -378,6 +370,7 @@ input:checked + .slider:before {
       display: flex;
       align-items: center;
       gap: 8px;
+      min-width: 0;
     }
 
     .mono-label {
@@ -387,82 +380,77 @@ input:checked + .slider:before {
     }
 
     .domain-badge {
+      display: block;
+      max-width: 190px;
       background: var(--surface-3);
       color: var(--accent-green);
       font-size: 11px;
       padding: 2px 6px;
       border-radius: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
-    .close-btn {
-      font-size: 14px;
-      color: var(--text-muted);
-      padding: 2px 6px;
+  }
+}
 
-      &:hover {
-        color: var(--text-primary);
-      }
-    }
+// permission button. Will replace the site cards when required
+.permission-prompt {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  .grant-cookie-btn {
+    color: var(--text-permissions);
+    font-size: 16px;
+    font-weight: 600;
+    background-color: var(--text-permission-green);
+    border: 3px solid var(--text-permission-green);
   }
 }
 
 // Settings profile top info
 
 .cookies-table {
+  --cookie-columns: minmax(0, 1fr) 80px 64px;
+
   display: flex;
   flex-direction: column;
 
   .table-header {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: var(--cookie-columns);
+    column-gap: 8px;
     font-size: 12px;
     color: var(--text-muted);
     padding-bottom: 12px;
     padding-top: 12px;
+    padding-right: 6px;
     border-bottom: 1px solid var(--border-1);
     align-items: center;
 
-    // Expire and Options label needs to line up
     .header-expires {
-      margin-left: 75px;
-    }
-    .header-options {
-      margin-right: 15px;
+      justify-self: start;
+      text-align: left;
     }
   }
 
   // Scrollbar: same variables/citation as the previous
   .cookie-list-container {
-    max-height: 144px;
+    max-height: 143px;
     overflow-y: auto;
     padding-top: 8px;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-track {
-      background: transparent;
-      margin: 4px 0;
-    }
-
-    // scrollbar color/shape
-    &::-webkit-scrollbar-thumb {
-      background-color: var(--border-2);
-      border-radius: 9999px;
-      border: 1px solid transparent;
-      transition: background-color 0.2s ease;
-
-      // highlight scrollbar on hover
-      &:hover {
-        background-color: var(--text-muted);
-      }
-    }
+    scrollbar-gutter: stable;
+    font-family: var(--font-mono);
+    @include mixins.compact-scrollbar;
   }
 
   .cookie-row {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: var(--cookie-columns);
+    align-items: center;
+    gap: 8px;
     color: var(--text-muted);
     padding: 12px 0;
     border-bottom: 1px solid var(--border-1);
@@ -471,19 +459,33 @@ input:checked + .slider:before {
      border-bottom: none;
     }
 
+    .cookie-expires {
+      color: var(--text-muted);
+      text-align: left;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+
     .cookie-meta {
       display: flex;
       flex-direction: column;
       gap: 4px;
+      flex: 1;
+      min-width: 0;
 
       .cookie-name {
-        font-size: 14px;
+        display: block;
+        font-size: 12px;
         color: var(--text-primary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
 
       // Security flag boxes/badges
       .flag-badges {
         display: flex;
+        flex-wrap: wrap;
         gap: 4px;
 
         .flag-badge {
@@ -492,59 +494,32 @@ input:checked + .slider:before {
           border-radius: 4px;
           font-weight: 600;
 
-          &.sec {
+          &--partitioned {
             color: var(--badge-blue);
+            background: rgba(96, 165, 250, 0.12);
           }
 
-          &.httponly {
+          &--secure {
             color: var(--badge-green);
+            background: rgba(52, 211, 153, 0.12);
           }
 
-          &.ss-s, &.ss-n {
-            color: var(--badge-amber);
+          &--http-only {
+            color: var(--badge-blue);
+            background: rgba(96, 165, 250, 0.12);
           }
+
+          &--same-site {
+            color: var(--badge-amber);
+            background: rgba(251, 191, 36, 0.12);
+          }
+
         }
       }
     }
 
-    .cookie-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-
-      .cookie-expires {
-        font-size: 10px;
-        color: var(--text-muted);
-      }
-
-      // right hand side cookie buttons
-
-      .row-btns {
-        display: flex;
-        gap: 2px;
-
-        .row-btn {
-          padding: 3px;
-          opacity: 0.6;
-
-          // Vault and edit buttons hover blue. Delete hovers amber
-
-          &:hover {
-            opacity: 1;
-            color: var(--accent-blue);
-          }
-
-          &.delete-btn:hover {
-            opacity: 1;
-            color: var(--accent-amber);
-          }
-
-          &.active {
-            opacity: 1;
-            color: var(--accent-blue);
-          }
-        }
-      }
+    > .button-group {
+      justify-self: end;
     }
   }
 }
@@ -571,7 +546,10 @@ input:checked + .slider:before {
       }
 
       .profile-value {
+        max-width: 210px;
         color: var(--text-secondary);
+        overflow-wrap: anywhere;
+        text-align: right;
 
         &.score-badge {
           background: rgba(52, 211, 153, 0.15);
@@ -658,7 +636,7 @@ input:checked + .slider:before {
   height: 36px;
   cursor: pointer;
   transition-duration: .1s;
-  
+
   &:hover {
         background-color: var(--surface-4);
       }
