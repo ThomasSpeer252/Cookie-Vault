@@ -1,14 +1,4 @@
 // Main panel: General settings
-export interface Settings {
-    // TODO: replace with actual app-level settings fields
-    // Extension Active
-    // Auto-Delete
-    // Auto-Vault
-    // Dark Mode
-    // Operation Log
-    // Unvault Everything
-
-}
 
 // TODO: needs chrome.storage read for persistence/allowing user to save settings
 function getSettings(): Settings {
@@ -96,7 +86,4 @@ export function renderSettings(onBack: () => void) {
   `;
 
     document.getElementById('close-settings-btn')?.addEventListener('click', onBack);
-
-    // TODO: bind listeners for individual controls here,
-    // each one updating `settings` and calling saveSettings(settings)
 }
