@@ -1,19 +1,31 @@
 import { openOverlay } from './overlay';
 
-// Main panel: General settings
-
-// TODO: needs chrome.storage read for persistence/allowing user to save settings
-function getSettings(): Settings {
-    // placeholder defaults
-    return {}
+const DEFAULT_SETTINGS: Settings = {
+  active: true,
+  autoDel: false,
+  autoVault: false,
+  darkMode: true
 }
 
-// TODO: needs chrome.storage write
-function saveSettings(settings: Settings) {
+export interface Settings {
+  active: Boolean;
+  autoDel: Boolean;
+  autoVault: Boolean;
+  darkMode: Boolean;
 }
 
-export function renderSettings() {
-    getSettings();
+async function getSettings(): Promise<Settings> {
+  // No promise wrapper because chrome API handles that on its own
+  return chrome.storage.sync.get(DEFAULT_SETTINGS);
+}
+
+async function saveSettings(settings: Settings) {
+  chrome.storage.sync.set(settings)
+}
+
+// TODO Connect storage and render
+export async function renderSettings() {
+    await getSettings();
 
     const overlay = openOverlay(`
     <div class="site-details-view settings-view">
@@ -70,6 +82,7 @@ export function renderSettings() {
             </label>
           </div>
 
+          <!-- TODO: Operation log should open a new page on the extension and show a read-only log of cookie usage -->
           <div class="settings-row">
             <div class="settings-info">
                 <span class="settings-label">Operation Log</span>
