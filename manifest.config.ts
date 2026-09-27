@@ -20,7 +20,8 @@ export default defineManifest({
   }],
   permissions: [
     'sidePanel',
-    'contentSettings'
+    'contentSettings',
+    'storage'
   ],
   optional_permissions: ['cookies'],
   optional_host_permissions: ['<all_urls>'],
