@@ -1,4 +1,6 @@
+import { findCookieInSite } from './cookie_actions';
 import type { CookieSite } from './cookie_data';
+import { openCookieEdit } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
 import { openOverlay } from './overlay';
 
@@ -15,7 +17,10 @@ function renderCookie(cookie: chrome.cookies.Cookie): string {
     const name = cookie.name || '(unnamed)';
 
     return `
-      <div class="cookie-row">
+      <div class="cookie-row"
+        data-cookie-name="${encodeURIComponent(cookie.name)}"
+        data-cookie-path="${encodeURIComponent(cookie.path)}"
+        data-cookie-store-id="${encodeURIComponent(cookie.storeId ?? '')}">
         <div class="cookie-meta">
           <span class="cookie-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
           <div class="flag-badges">${flags}</div>
@@ -43,7 +48,10 @@ function renderCookie(cookie: chrome.cookies.Cookie): string {
     `;
 }
 
-export function renderSiteDetails(site: CookieSite) {
+export function renderSiteDetails(
+    site: CookieSite,
+    refreshSite: () => void | Promise<void>,
+) {
     const secureCount = site.cookies.filter(cookie => cookie.secure).length;
     const httpOnlyCount = site.cookies.filter(cookie => cookie.httpOnly).length;
 
@@ -120,4 +128,21 @@ export function renderSiteDetails(site: CookieSite) {
     const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-details"]');
     closeButton?.addEventListener('click', overlay.close);
     closeButton?.focus();
+
+    overlay.element.addEventListener('click', (event) => {
+        const editButton = (event.target as Element).closest('[data-action="edit-cookie"]');
+        if (!editButton) return;
+
+        const row = editButton.closest('.cookie-row') as HTMLElement | null;
+        if (!row) return;
+
+        const name = decodeURIComponent(row.dataset.cookieName ?? '');
+        const path = decodeURIComponent(row.dataset.cookiePath ?? '');
+        const storeIdRaw = row.dataset.cookieStoreId;
+        const storeId = storeIdRaw ? decodeURIComponent(storeIdRaw) : undefined;
+        const cookie = findCookieInSite(site, name, path, storeId || undefined);
+        if (!cookie) return;
+
+        openCookieEdit(cookie, refreshSite);
+    });
 }

@@ -2,11 +2,29 @@ import './style.scss';
 import { getCookieSites, type CookieSite } from './cookie_data';
 import { escapeHtml } from './cookie_format';
 import { renderSettings } from './main_settings';
+import { closeAllOverlays } from './overlay';
 import { renderSiteDetails } from './site_settings';
 
 let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
+
+async function openSiteDetailsForDomain(domain: string): Promise<void> {
+    closeAllOverlays();
+
+    try {
+        sites = await getCookieSites();
+    } catch (error) {
+        loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
+        void renderSiteList();
+        return;
+    }
+
+    const site = sites.find((candidate) => candidate.domain === domain);
+    if (!site) return;
+
+    renderSiteDetails(site, () => openSiteDetailsForDomain(domain));
+}
 
 async function renderSiteList() {
     const container = document.getElementById('site-list');
@@ -127,9 +145,11 @@ async function renderSiteList() {
 
     container.querySelectorAll('[data-action="settings-site"]').forEach(button => {
         button.addEventListener('click', event => {
-            const domain = (event.currentTarget as HTMLButtonElement).dataset.site;
-            const site = sites.find(candidate => candidate.domain === domain);
-            if (site) renderSiteDetails(site);
+            const domainAttr = (event.currentTarget as HTMLButtonElement).dataset.site;
+            const site = sites.find((candidate) =>
+                candidate.domain === domainAttr
+                || escapeHtml(candidate.domain) === domainAttr);
+            if (site) void openSiteDetailsForDomain(site.domain);
         });
     });
 }

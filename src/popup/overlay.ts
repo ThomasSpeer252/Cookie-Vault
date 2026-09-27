@@ -3,6 +3,25 @@ export interface OverlayHandle {
     close: () => void;
 }
 
+/** Remove all popup overlays and restore the home view focus state. */
+export function closeAllOverlays(): void {
+    const appContainer = document.getElementById('app');
+    if (!appContainer) return;
+
+    for (const element of [...appContainer.children]) {
+        if (element instanceof HTMLElement && element.classList.contains('view-overlay')) {
+            element.remove();
+        }
+    }
+
+    for (const element of [...appContainer.children]) {
+        if (element instanceof HTMLElement) {
+            element.inert = false;
+            element.removeAttribute('aria-hidden');
+        }
+    }
+}
+
 export function openOverlay(content: string): OverlayHandle | null {
     const appContainer = document.getElementById('app');
     if (!appContainer) return null;
