@@ -2,14 +2,14 @@ import { openOverlay } from './overlay';
 import { applyTheme } from './theme';
 
 const DEFAULT_SETTINGS: Settings = {
-  active: true,
   autoDel: false,
   autoVault: false,
+  detectionActive: false,
   darkMode: true
 }
 
 export interface Settings {
-  active: boolean;
+  detectionActive: boolean;
   autoDel: boolean;
   autoVault: boolean;
   darkMode: boolean;
@@ -41,11 +41,11 @@ export async function renderSettings() {
       <div class="settings-grid info-grid">
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Extension Active</span>
-              <span class="settings-minor">Enable cookie monitoring</span>
+              <span class="settings-label">Dark Mode</span>
+              <span class="settings-minor">Toggle light/dark interface</span>
           </div>
           <label class="switch">
-            <input type="checkbox" data-key="active">
+            <input type="checkbox" data-key="darkMode">
             <span class="slider round"></span>
           </label>
         </div>
@@ -74,11 +74,11 @@ export async function renderSettings() {
 
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Dark Mode</span>
-              <span class="settings-minor">Toggle light/dark interface</span>
+              <span class="settings-label">Detection Active</span>
+              <span class="settings-minor">Enable XSS/CSRF detection (Stretch)</span>
           </div>
           <label class="switch">
-            <input type="checkbox" data-key="darkMode">
+            <input type="checkbox" data-key="detectionActive">
             <span class="slider round"></span>
           </label>
         </div>
