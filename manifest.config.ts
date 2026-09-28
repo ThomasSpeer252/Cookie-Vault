@@ -19,12 +19,17 @@ export default defineManifest({
     matches: ['https://*/*'],
   }],
   permissions: [
+    'cookies',
     'sidePanel',
     'contentSettings',
     'storage'
   ],
   optional_permissions: ['cookies'],
   optional_host_permissions: ['<all_urls>'],
+    'unlimitedStorage',
+    'storage',
+  ],
+  host_permissions: ['https://*/*'],
   side_panel: {
     default_path: 'src/sidepanel/index.html',
   },
