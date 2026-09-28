@@ -21,10 +21,12 @@ export default defineManifest({
   permissions: [
     'sidePanel',
     'contentSettings',
-    'storage'
+    'unlimitedStorage',
+    'storage',
   ],
   optional_permissions: ['cookies'],
   optional_host_permissions: ['<all_urls>'],
+  host_permissions: ['https://*/*'],
   side_panel: {
     default_path: 'src/sidepanel/index.html',
   },
