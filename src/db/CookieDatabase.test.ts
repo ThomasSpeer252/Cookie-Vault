@@ -45,7 +45,7 @@ describe('CookieDatabase', () => {
   };
 
   beforeEach(async () => {
-    db = new CookieDatabase();
+    db = CookieDatabase.getInstance();
     dbName = 'TestDB_' + Date.now();
     await db.init(dbName, 1);
   });
@@ -63,6 +63,10 @@ describe('CookieDatabase', () => {
   describe('Initialization', () => {
     it('should initialize successfully', () => {
       expect(db).toBeDefined();
+    });
+
+    it('should return the same instance', () => {
+      expect(CookieDatabase.getInstance()).toBe(db);
     });
   });
 
@@ -252,10 +256,10 @@ describe('CookieDatabase', () => {
 
   describe('Uninitialized Database Errors', () => {
     it('should throw an error if database is not initialized', async () => {
-      const uninitializedDb = new CookieDatabase();
-      await expect(uninitializedDb.upsertCookie(mockCookie)).rejects.toThrow('Database not initialized');
-      await expect(uninitializedDb.deleteCookie('id', 'domain')).rejects.toThrow('Database not initialized');
-      await expect(uninitializedDb.getCookiesByDomain('domain')).rejects.toThrow('Database not initialized');
+      await db.close();
+      await expect(db.upsertCookie(mockCookie)).rejects.toThrow('Database not initialized');
+      await expect(db.deleteCookie('id', 'domain')).rejects.toThrow('Database not initialized');
+      await expect(db.getCookiesByDomain('domain')).rejects.toThrow('Database not initialized');
     });
   });
 
@@ -264,10 +268,11 @@ describe('CookieDatabase', () => {
       await db.upsertCookie(mockCookie);
       await db.close();
 
-      const newDb = new CookieDatabase();
-      await newDb.init(dbName, 1);
+      const reopenedDb = CookieDatabase.getInstance();
+      expect(reopenedDb).toBe(db);
+      await reopenedDb.init(dbName, 1);
 
-      const cookiesByDomain = newDb.getAllCookiesGroupedByDomain();
+      const cookiesByDomain = reopenedDb.getAllCookiesGroupedByDomain();
       expect(cookiesByDomain.size).toBe(1);
       expect(cookiesByDomain.get(mockCookie.domain)?.[0]).toEqual(mockCookie);
     });
@@ -303,7 +308,9 @@ describe('CookieDatabase', () => {
 
     await db.clearDatabase();
 
-    const nextDb = new CookieDatabase();
+    await db.close();
+    const nextDb = CookieDatabase.getInstance();
+    expect(nextDb).toBe(db);
     await nextDb.init(dbName, 1);
 
     expect(nextDb.getAllCookies()).toHaveLength(0);
