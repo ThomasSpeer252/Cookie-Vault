@@ -3,6 +3,34 @@
 
 // Extension colors that were taken from the figma draft
 :root {
+  --bg-primary: #F0EEE8;
+  --surface-1: #E9E7DD;
+  --surface-2: #E1DFD1;
+  --surface-3: #D7D5C2;
+  --surface-4: #C9C8B9;
+  --border-1: #D5D2C2;
+  --border-2: #C9C6B1;
+  
+  --text-primary: #0E0A06;
+  --text-secondary: #342A1E;
+  --text-muted: #9B8B74;
+  
+  --accent-green: #34d399;
+  --accent-blue: #60a5fa;
+  --accent-amber: #fbbf24;
+  --accent-red: #f87171;
+  
+  --text-permission-green: #1d6e00;
+  
+  --badge-blue: #3a92ff;
+  --badge-green: #2eb300;
+  --badge-amber: #dc9d00;
+  
+  --font-sans: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Jetbrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.lightmode {
   --bg-primary: #0f1117;
   --surface-1: #161822;
   --surface-2: #1e202e;
@@ -10,11 +38,11 @@
   --surface-4: #363746;
   --border-1: #2a2d3d;
   --border-2: #36394e;
-
+  
   --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-muted: #64748b;
-
+  
   --accent-green: #34d399;
   --accent-blue: #60a5fa;
   --accent-amber: #fbbf24;

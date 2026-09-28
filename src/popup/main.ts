@@ -1,9 +1,10 @@
 import './style.scss';
 import { getCookieSites, type CookieSite } from './cookie_data';
 import { escapeHtml } from './cookie_format';
-import { renderSettings } from './main_settings';
+import { getSettings, renderSettings } from './main_settings';
 import { closeAllOverlays } from './overlay';
 import { renderSiteDetails } from './site_settings';
+import { applyTheme } from './theme';
 
 let sites: CookieSite[] = [];
 let isLoading = true;
@@ -212,7 +213,9 @@ function bindHomeEventListeners() {
     document.getElementById('settings-btn')?.addEventListener('click', renderSettings);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    const settings = await getSettings();
+    applyTheme(settings.darkMode);
     bindHomeEventListeners();
     void loadCookies();
 });

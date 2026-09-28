@@ -1,4 +1,5 @@
 import { openOverlay } from './overlay';
+import { applyTheme } from './theme';
 
 const DEFAULT_SETTINGS: Settings = {
   active: true,
@@ -8,13 +9,13 @@ const DEFAULT_SETTINGS: Settings = {
 }
 
 export interface Settings {
-  active: Boolean;
-  autoDel: Boolean;
-  autoVault: Boolean;
-  darkMode: Boolean;
+  active: boolean;
+  autoDel: boolean;
+  autoVault: boolean;
+  darkMode: boolean;
 }
 
-async function getSettings(): Promise<Settings> {
+export async function getSettings(): Promise<Settings> {
   // No promise wrapper because chrome API handles that on its own
   return chrome.storage.sync.get(DEFAULT_SETTINGS) as Promise<Settings>;
 }
@@ -105,12 +106,21 @@ export async function renderSettings() {
     
     checkbox.checked = Boolean(settings[key]);
     checkbox.addEventListener('change', () => {
-      // console.log('Checked');
       settings[key] = checkbox.checked;
       saveSettings(settings);
-
     });
+    
+    checkbox.addEventListener('change', async () => {
+      settings[key] = checkbox.checked;
+      await saveSettings(settings);
+      
+      if (key === 'darkMode') {
+        console.log('Checked');
+        applyTheme(checkbox.checked);
+     };
+   });
   });
+  
 
   const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
   closeButton?.addEventListener('click', overlay.close);
