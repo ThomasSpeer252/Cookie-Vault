@@ -1,7 +1,34 @@
-function cookieUrl(cookie: chrome.cookies.Cookie): string {
+export function cookieUrl(cookie: chrome.cookies.Cookie): string {
     const host = cookie.domain.replace(/^\./, '');
     const scheme = cookie.secure ? 'https' : 'http';
     return `${scheme}://${host}${cookie.path || '/'}`;
+}
+
+export async function removeBrowserCookie(cookie: chrome.cookies.Cookie): Promise<void> {
+    await chrome.cookies.remove({
+        url: cookieUrl(cookie),
+        name: cookie.name,
+        storeId: cookie.storeId,
+        ...(cookie.partitionKey ? { partitionKey: cookie.partitionKey } : {}),
+    });
+}
+
+export async function restoreBrowserCookie(cookie: chrome.cookies.Cookie): Promise<void> {
+    const restored = await chrome.cookies.set({
+        url: cookieUrl(cookie),
+        name: cookie.name,
+        value: cookie.value,
+        ...(cookie.hostOnly ? {} : { domain: cookie.domain }),
+        path: cookie.path,
+        storeId: cookie.storeId,
+        ...(cookie.partitionKey ? { partitionKey: cookie.partitionKey } : {}),
+        secure: cookie.secure,
+        httpOnly: cookie.httpOnly,
+        sameSite: cookie.sameSite,
+        ...(!cookie.session && cookie.expirationDate !== undefined
+            ? { expirationDate: cookie.expirationDate } : {}),
+    });
+    if (!restored) throw new Error('The browser did not restore the cookie.');
 }
 
 function promisify<T>(fn: (cb: (result: T) => void) => void): Promise<T> {

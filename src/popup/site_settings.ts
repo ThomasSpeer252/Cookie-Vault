@@ -1,5 +1,6 @@
-import { findCookieInSite } from './cookie_actions';
-import type { CookieSite } from './cookie_data';
+import { removeBrowserCookie, restoreBrowserCookie } from './cookie_actions';
+import { toVaultCookie, type CookieSite, type SiteCookie } from './cookie_data';
+import { CookieDatabase } from '../db/CookieDatabase';
 import { openCookieEdit } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
 import { openOverlay } from './overlay';
@@ -7,7 +8,28 @@ import { openOverlay } from './overlay';
 const PLACEHOLDER_SECURITY = 'No Concerns Found';
 const PLACEHOLDER_SAFETY_SCORE = 94;
 
-function renderCookie(cookie: chrome.cookies.Cookie): string {
+export async function moveCookie(cookie: SiteCookie): Promise<void> {
+    const db = CookieDatabase.getInstance();
+    if (cookie.isVaulted) {
+        await restoreBrowserCookie(cookie);
+        try {
+            await db.deleteCookie(cookie.vaultId, cookie.domain);
+        } catch (error) {
+            await removeBrowserCookie(cookie);
+            throw error;
+        }
+    } else {
+        await db.upsertCookie(toVaultCookie(cookie));
+        try {
+            await removeBrowserCookie(cookie);
+        } catch (error) {
+            await db.deleteCookie(cookie.vaultId, cookie.domain);
+            throw error;
+        }
+    }
+}
+
+function renderCookie(cookie: SiteCookie, index: number): string {
     const flags = getCookieFlags(cookie)
         .map(flag => `<span class="flag-badge flag-badge--${flag.kind}"${flag.title
             ? ` title="${escapeHtml(flag.title)}"`
@@ -18,22 +40,20 @@ function renderCookie(cookie: chrome.cookies.Cookie): string {
 
     return `
       <div class="cookie-row"
-        data-cookie-name="${encodeURIComponent(cookie.name)}"
-        data-cookie-path="${encodeURIComponent(cookie.path)}"
-        data-cookie-store-id="${encodeURIComponent(cookie.storeId ?? '')}">
+        data-cookie-index="${index}">
         <div class="cookie-meta">
           <span class="cookie-name" title="${escapeHtml(name)}">${escapeHtml(name)}</span>
           <div class="flag-badges">${flags}</div>
         </div>
         <span class="cookie-expires" title="${escapeHtml(expiration.title)}">${escapeHtml(expiration.label)}</span>
         <div class="button-group" data-density="compact">
-          <button type="button" class="icon-btn" data-action="lock-cookie" title="Vault Cookie">
+          <button type="button" class="icon-btn" data-action="lock-cookie" title="${cookie.isVaulted ? 'Unvault Cookie' : 'Vault Cookie'}">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="3" y="7" width="10" height="7" rx="1.5"/>
-              <path d="M5 7V4.5a3 3 0 0 1 6 0V7"/>
+              <path d="${cookie.isVaulted ? 'M5 7V4.5a3 3 0 0 1 6 0' : 'M5 7V4.5a3 3 0 0 1 6 0V7'}"/>
             </svg>
           </button>
-          <button type="button" class="icon-btn" data-action="edit-cookie" title="Edit Cookie">
+          <button type="button" class="icon-btn" data-action="edit-cookie" title="${cookie.isVaulted ? 'Unvault to edit' : 'Edit Cookie'}" ${cookie.isVaulted ? 'disabled' : ''}>
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M11 2l3 3-9 9H2v-3l9-9z"/>
             </svg>
@@ -90,6 +110,7 @@ export function renderSiteDetails(
             <div class="cookie-list-container">
               <div class="table-body">${site.cookies.map(renderCookie).join('')}</div>
             </div>
+            <p class="list-state list-state--error" data-vault-error hidden></p>
           </div>
         </section>
 
@@ -129,20 +150,34 @@ export function renderSiteDetails(
     closeButton?.addEventListener('click', overlay.close);
     closeButton?.focus();
 
-    overlay.element.addEventListener('click', (event) => {
-        const editButton = (event.target as Element).closest('[data-action="edit-cookie"]');
-        if (!editButton) return;
+    overlay.element.addEventListener('click', async (event) => {
+        const button = (event.target as Element).closest<HTMLButtonElement>('[data-action="edit-cookie"], [data-action="lock-cookie"]');
+        if (!button) return;
 
-        const row = editButton.closest('.cookie-row') as HTMLElement | null;
+        const row = button.closest<HTMLElement>('.cookie-row');
         if (!row) return;
 
-        const name = decodeURIComponent(row.dataset.cookieName ?? '');
-        const path = decodeURIComponent(row.dataset.cookiePath ?? '');
-        const storeIdRaw = row.dataset.cookieStoreId;
-        const storeId = storeIdRaw ? decodeURIComponent(storeIdRaw) : undefined;
-        const cookie = findCookieInSite(site, name, path, storeId || undefined);
+        const cookie = site.cookies[Number(row.dataset.cookieIndex)];
         if (!cookie) return;
 
-        openCookieEdit(cookie, refreshSite);
+        if (button.dataset.action === 'edit-cookie') {
+            if (!cookie.isVaulted) openCookieEdit(cookie, refreshSite);
+            return;
+        }
+
+        button.disabled = true;
+        const errorEl = overlay.element.querySelector<HTMLElement>('[data-vault-error]');
+        if (errorEl) errorEl.hidden = true;
+
+        try {
+            await moveCookie(cookie);
+            await refreshSite();
+        } catch (error) {
+            button.disabled = false;
+            if (errorEl) {
+                errorEl.textContent = error instanceof Error ? error.message : 'Unable to move the cookie.';
+                errorEl.hidden = false;
+            }
+        }
     });
 }

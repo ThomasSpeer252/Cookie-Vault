@@ -4,6 +4,7 @@ import { escapeHtml } from './cookie_format';
 import { renderSettings } from './main_settings';
 import { closeAllOverlays } from './overlay';
 import { renderSiteDetails } from './site_settings';
+import { CookieDatabase } from '../db/CookieDatabase';
 
 let sites: CookieSite[] = [];
 let isLoading = true;
@@ -30,6 +31,11 @@ async function renderSiteList() {
     const container = document.getElementById('site-list');
     if (!container) return;
 
+    if (loadError) {
+        container.innerHTML = `<p class="list-state list-state--error">${escapeHtml(loadError)}</p>`;
+        return;
+    }
+
     // Check for permissions to view sites/cookies. Prompt if needed
     const hasPermission = await chrome.permissions.contains({permissions: ['cookies'], origins: ['<all_urls>']});
 
@@ -51,11 +57,6 @@ async function renderSiteList() {
         return;
     }
 
-    if (loadError) {
-        container.innerHTML = `<p class="list-state list-state--error">${escapeHtml(loadError)}</p>`;
-        return;
-    }
-
     const filterText = searchInput?.value.toLowerCase() || '';
     const showVaulted = vaultCheck?.checked ?? true;
     const showUnvaulted = unvaultCheck?.checked ?? true;
@@ -64,7 +65,8 @@ async function renderSiteList() {
 
     const filteredSites = sites.filter(site => {
         const matchesText = site.domain.toLowerCase().includes(filterText);
-        const matchesCategory = (site.isVaulted && showVaulted) || (!site.isVaulted && showUnvaulted);
+        const matchesCategory = (showVaulted && site.cookies.some(cookie => cookie.isVaulted))
+            || (showUnvaulted && site.cookies.some(cookie => !cookie.isVaulted));
         const matchesStatus = (site.allSecure && showSafe) || (!site.allSecure && showFlagged);
         return matchesText && matchesCategory && matchesStatus;
     }).sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
@@ -212,7 +214,15 @@ function bindHomeEventListeners() {
     document.getElementById('settings-btn')?.addEventListener('click', renderSettings);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     bindHomeEventListeners();
+    try {
+        await CookieDatabase.getInstance().init();
+    } catch (error) {
+        isLoading = false;
+        loadError = error instanceof Error ? error.message : 'Unable to open the cookie vault.';
+        await renderSiteList();
+        return;
+    }
     void loadCookies();
 });
