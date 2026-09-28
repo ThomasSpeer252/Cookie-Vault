@@ -1,4 +1,4 @@
-import { removeBrowserCookie, restoreBrowserCookie } from './cookie_actions';
+import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie, findCookieInSite } from './cookie_actions';
 import { toVaultCookie, type CookieSite, type SiteCookie } from './cookie_data';
 import { CookieDatabase } from '../db/CookieDatabase';
 import { openCookieEdit } from './cookie_edit';
@@ -156,7 +156,7 @@ export function renderSiteDetails(
 
     // Attach to the replaced content so refreshes do not accumulate click handlers.
     overlay.element.querySelector('.site-details-view')?.addEventListener('click', async (event) => {
-        const button = (event.target as Element).closest<HTMLButtonElement>('[data-action="edit-cookie"], [data-action="lock-cookie"]');
+        const button = (event.target as Element).closest<HTMLButtonElement>('[data-action="edit-cookie"], [data-action="lock-cookie"], [data-action="delete-cookie"]');
         if (!button) return;
 
         const row = button.closest<HTMLElement>('.cookie-row');
@@ -175,7 +175,18 @@ export function renderSiteDetails(
         if (errorEl) errorEl.hidden = true;
 
         try {
-            await moveCookie(cookie);
+            if (button.dataset.action === 'delete-cookie') {
+                await deleteSpecificCookie(cookie);
+                const cookieContainerElement = button.parentElement.parentElement.parentElement as HTMLElement;
+                button.parentElement.parentElement.remove();
+                if (cookieContainerElement.children.length === 0) {
+                    overlay.close();
+                    await refreshSite();
+                    return;
+                }
+            } else {
+                await moveCookie(cookie);
+            }
             await refreshSite();
         } catch (error) {
             button.disabled = false;
