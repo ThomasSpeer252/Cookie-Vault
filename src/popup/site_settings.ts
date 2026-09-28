@@ -47,7 +47,7 @@ function renderCookie(cookie: SiteCookie, index: number): string {
         </div>
         <span class="cookie-expires" title="${escapeHtml(expiration.title)}">${escapeHtml(expiration.label)}</span>
         <div class="button-group" data-density="compact">
-          <button type="button" class="icon-btn" data-action="lock-cookie" title="${cookie.isVaulted ? 'Unvault Cookie' : 'Vault Cookie'}">
+          <button type="button" class="icon-btn${cookie.isVaulted ? ' icon-btn--vaulted' : ''}" data-action="lock-cookie" title="${cookie.isVaulted ? 'Unvault Cookie' : 'Vault Cookie'}">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="3" y="7" width="10" height="7" rx="1.5"/>
               <path d="${cookie.isVaulted ? 'M5 7V4.5a3 3 0 0 1 6 0' : 'M5 7V4.5a3 3 0 0 1 6 0V7'}"/>
