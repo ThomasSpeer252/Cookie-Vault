@@ -95,7 +95,7 @@ async function renderSiteList() {
             ? 'All cookies have the Secure flag'
             : 'Contains cookies without the Secure flag';
         const domain = escapeHtml(site.domain);
-        const pinned = site.isPinned ? ' site-card--pinned' : '';
+        const pinned = site.isPinned;
 
         card.innerHTML = `
           <div class="site-info">
@@ -106,7 +106,7 @@ async function renderSiteList() {
           </div>
 
           <div class="button-group">
-            <button type="button" class="icon-btn ${pinned ? 'pin-btn-on' : ''}" data-action="pin-site"
+            <button type="button" class="icon-btn${pinned ? ' icon-btn--amber' : ''}" data-action="pin-site"
               title="${pinned ? 'Unpin Site' : 'Pin Site'}" data-site="${domain}">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
     <path d="M4 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5H10.5v3.636l1.205 1.808A.75.75 0 0 1 11.08 10H8.75v3.75a.75.75 0 0 1-1.5 0V10H4.92a.75.75 0 0 1-.624-1.166L5.5 7.026V3.25H4.75A.75.75 0 0 1 4 2.5Z"/>
