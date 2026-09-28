@@ -3,7 +3,7 @@ import { toVaultCookie, type CookieSite, type SiteCookie } from './cookie_data';
 import { CookieDatabase } from '../db/CookieDatabase';
 import { openCookieEdit } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
-import { openOverlay } from './overlay';
+import { openOverlay, type OverlayHandle } from './overlay';
 
 const PLACEHOLDER_SECURITY = 'No Concerns Found';
 const PLACEHOLDER_SAFETY_SCORE = 94;
@@ -71,7 +71,8 @@ function renderCookie(cookie: SiteCookie, index: number): string {
 export function renderSiteDetails(
     site: CookieSite,
     refreshSite: () => void | Promise<void>,
-) {
+    existingOverlay?: OverlayHandle,
+): OverlayHandle | null {
     const secureCount = site.cookies.filter(cookie => cookie.secure).length;
     const httpOnlyCount = site.cookies.filter(cookie => cookie.httpOnly).length;
 
@@ -91,7 +92,7 @@ export function renderSiteDetails(
     `;
     */
 
-    const overlay = openOverlay(`
+    const content = `
       <div class="site-details-view">
         <section class="detail-card cookies-card">
           <header class="card-header">
@@ -143,14 +144,18 @@ export function renderSiteDetails(
           </div>
         </section>
       </div>
-    `);
+    `;
 
-    if (!overlay) return;
+    const overlay = existingOverlay ?? openOverlay(content);
+    if (existingOverlay) existingOverlay.element.innerHTML = content;
+
+    if (!overlay) return null;
     const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-details"]');
     closeButton?.addEventListener('click', overlay.close);
     closeButton?.focus();
 
-    overlay.element.addEventListener('click', async (event) => {
+    // Attach to the replaced content so refreshes do not accumulate click handlers.
+    overlay.element.querySelector('.site-details-view')?.addEventListener('click', async (event) => {
         const button = (event.target as Element).closest<HTMLButtonElement>('[data-action="edit-cookie"], [data-action="lock-cookie"]');
         if (!button) return;
 
@@ -180,4 +185,6 @@ export function renderSiteDetails(
             }
         }
     });
+
+    return overlay;
 }
