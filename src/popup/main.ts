@@ -96,6 +96,7 @@ async function renderSiteList() {
             : 'Contains cookies without the Secure flag';
         const domain = escapeHtml(site.domain);
         const pinned = site.isPinned;
+        const vaultedCount = site.cookies.filter(cookie => cookie.isVaulted).length;
 
         card.innerHTML = `
           <div class="site-info">
@@ -103,6 +104,7 @@ async function renderSiteList() {
               title="${secureStatus}"></span>
             <span class="site-name" title="${domain}">${domain}</span>
             <span class="site-cookie-count">${site.cookies.length}</span>
+            ${vaultedCount > 0 ? `<span class="site-cookie-count site-cookie-count--vaulted" title="Vaulted cookies for this site" aria-label="${vaultedCount} vaulted cookies">${vaultedCount}</span>` : ''}
           </div>
 
           <div class="button-group">
