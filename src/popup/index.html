@@ -1,10 +1,88 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="./main.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+
+  <title>Cookie Vault</title>
+</head>
+<body>
+<div id="app">
+  <!-- Top bar -->
+  <header class="vault-header">
+    <div class="logo-area">
+      <div class="vault-icon" style="width: 28px; height: 28px; border-radius: 7px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.133) 0%, rgba(96, 165, 250, 0.133) 100%); border: 1px solid rgba(52, 211, 153, 0.3); display: flex; align-items: center; justify-content: center;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <rect x="2" y="4" width="10" height="8" rx="1.5" stroke="#34d399" stroke-width="1.2"></rect>
+          <path d="M4.5 4V3a2.5 2.5 0 0 1 5 0v1" stroke="#34d399" stroke-width="1.2"></path>
+          <circle cx="7" cy="8" r="1.2" fill="#34d399"></circle>
+        </svg>
+      </div>
+      <div>
+        <div class="title">
+          Cookie Vault
+        </div>
+        <div class="version-number">
+          v0.1.0
+        </div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="settings-btn" class="icon-btn" title="Settings">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+          <mask id="gear-bore">
+            <rect width="16" height="16" fill="white"></rect>
+            <circle cx="8" cy="8" r="2.25" fill="black"></circle>
+          </mask>
+          <g mask="url(#gear-bore)">
+            <circle cx="8" cy="8" r="5.25"></circle>
+            <rect x="6.6" y="1" width="2.8" height="14" rx="0.9"></rect>
+            <rect x="1" y="6.6" width="14" height="2.8" rx="0.9"></rect>
+            <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(45 8 8)"></rect>
+            <rect x="6.6" y="1" width="2.8" height="14" rx="0.9" transform="rotate(-45 8 8)"></rect>
+          </g>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- List of websites -->
+  <main class="vault-body">
+    <!-- Filter buttons -->
+    <div class="filter-controls">
+      <label class="filter-chip">
+        <input type="checkbox" id="filter-vaulted" checked />
+        <span>Vaulted</span>
+      </label>
+      <label class="filter-chip">
+        <input type="checkbox" id="filter-unvaulted" checked />
+        <span>Unvaulted</span>
+      </label>
+      <label class="filter-chip">
+        <input type="checkbox" id="filter-safe" checked />
+        <span>Safe</span>
+      </label>
+      <label class="filter-chip">
+        <input type="checkbox" id="filter-flagged" checked />
+        <span>Flagged</span>
+      </label>
+    </div>
+
+    <!-- Manual search bar -->
+    <div class="search-bar">
+      <input type="text" id="site-search" placeholder="Search domain..." />
+    </div>
+
+    <div id="site-list" class="site-list">
+      <!-- list of websites appear here. main.ts handles this -->
+    </div>
+  </main>
+</div>
+
+<script type="module" src="./main.ts"></script>
+</body>
 </html>

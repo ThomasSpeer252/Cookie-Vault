@@ -1,0 +1,148 @@
+import { escapeHtml } from './cookie_format';
+import { updateCookie, type CookieEditInput } from './cookie_actions';
+import { openOverlay } from './overlay';
+
+function sameSiteFromSelect(value: string): `${chrome.cookies.SameSiteStatus}` {
+    if (value === 'strict' || value === 'lax' || value === 'no_restriction') {
+        return value;
+    }
+    return 'unspecified';
+}
+
+function defaultExpirationLocal(cookie: chrome.cookies.Cookie): string {
+    if (cookie.session || cookie.expirationDate === undefined) return '';
+    const date = new Date(cookie.expirationDate * 1000);
+    const pad = (part: number) => String(part).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+export function openCookieEdit(
+    cookie: chrome.cookies.Cookie,
+    onSaved: () => void | Promise<void>,
+): void {
+    const isSession = cookie.session || cookie.expirationDate === undefined;
+
+    const overlay = openOverlay(`
+      <div class="site-details-view cookie-edit-view">
+        <section class="detail-card">
+          <header class="card-header">
+            <div class="header-title">
+              <span class="mono-label">EDIT COOKIE</span>
+              <span class="domain-badge">${escapeHtml(cookie.name || '(unnamed)')}</span>
+            </div>
+            <button type="button" class="icon-btn" data-action="close-edit" title="Close">✕</button>
+          </header>
+
+          <form class="cookie-edit-form" id="cookie-edit-form">
+            <label class="cookie-edit-field">
+              <span>Value</span>
+              <input type="text" name="value" required value="${escapeHtml(cookie.value)}" />
+            </label>
+
+            <label class="cookie-edit-field cookie-edit-field--readonly">
+              <span>Domain</span>
+              <input type="text" readonly value="${escapeHtml(cookie.domain)}" />
+            </label>
+
+            <label class="cookie-edit-field cookie-edit-field--readonly">
+              <span>Path</span>
+              <input type="text" readonly value="${escapeHtml(cookie.path)}" />
+            </label>
+
+            <div class="cookie-edit-flags">
+              <label><input type="checkbox" name="secure" ${cookie.secure ? 'checked' : ''} /> Secure</label>
+              <label><input type="checkbox" name="httpOnly" ${cookie.httpOnly ? 'checked' : ''} /> HttpOnly</label>
+              <label><input type="checkbox" name="session" ${isSession ? 'checked' : ''} /> Session</label>
+            </div>
+
+            <label class="cookie-edit-field">
+              <span>SameSite</span>
+              <select name="sameSite">
+                <option value="unspecified" ${cookie.sameSite === 'unspecified' ? 'selected' : ''}>Unspecified</option>
+                <option value="lax" ${cookie.sameSite === 'lax' ? 'selected' : ''}>Lax</option>
+                <option value="strict" ${cookie.sameSite === 'strict' ? 'selected' : ''}>Strict</option>
+                <option value="no_restriction" ${cookie.sameSite === 'no_restriction' ? 'selected' : ''}>None</option>
+              </select>
+            </label>
+
+            <label class="cookie-edit-field" id="expires-field">
+              <span>Expires</span>
+              <input type="datetime-local" name="expires" value="${defaultExpirationLocal(cookie)}" />
+            </label>
+
+            <p class="cookie-edit-error list-state list-state--error" id="cookie-edit-error" hidden></p>
+
+            <div class="cookie-edit-actions">
+              <button type="button" class="cookie-edit-btn cookie-edit-btn--cancel" data-action="cancel-edit">Cancel</button>
+              <button type="submit" class="cookie-edit-btn cookie-edit-btn--save">Save changes</button>
+            </div>
+          </form>
+        </section>
+      </div>
+    `);
+
+    if (!overlay) return;
+
+    const form = overlay.element.querySelector<HTMLFormElement>('#cookie-edit-form');
+    const errorEl = overlay.element.querySelector<HTMLParagraphElement>('#cookie-edit-error');
+    const sessionCheck = overlay.element.querySelector<HTMLInputElement>('input[name="session"]');
+    const expiresField = overlay.element.querySelector<HTMLLabelElement>('#expires-field');
+
+    const syncExpiresVisibility = () => {
+        if (expiresField && sessionCheck) {
+            expiresField.hidden = sessionCheck.checked;
+        }
+    };
+    sessionCheck?.addEventListener('change', syncExpiresVisibility);
+    syncExpiresVisibility();
+
+    const close = () => overlay.close();
+
+    overlay.element.querySelector('[data-action="close-edit"]')?.addEventListener('click', close);
+    overlay.element.querySelector('[data-action="cancel-edit"]')?.addEventListener('click', close);
+
+    form?.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (!form || !errorEl) return;
+
+        errorEl.hidden = true;
+        errorEl.textContent = '';
+
+        const data = new FormData(form);
+        const session = data.get('session') === 'on';
+        let expirationDate: number | undefined;
+
+        if (!session) {
+            const raw = String(data.get('expires') ?? '');
+            if (raw) {
+                expirationDate = Math.floor(new Date(raw).getTime() / 1000);
+            }
+        }
+
+        const input: CookieEditInput = {
+            value: String(data.get('value') ?? ''),
+            secure: data.get('secure') === 'on',
+            httpOnly: data.get('httpOnly') === 'on',
+            sameSite: sameSiteFromSelect(String(data.get('sameSite') ?? 'unspecified')),
+            session,
+            expirationDate,
+        };
+
+        if (input.sameSite === 'no_restriction') {
+            input.secure = true;
+        }
+
+        try {
+            await updateCookie(cookie, input);
+            close();
+            await onSaved();
+        } catch (error) {
+            errorEl.hidden = false;
+            errorEl.textContent = error instanceof Error
+                ? error.message
+                : 'Failed to update cookie.';
+        }
+    });
+
+    overlay.element.querySelector<HTMLButtonElement>('[data-action="close-edit"]')?.focus();
+}
