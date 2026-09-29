@@ -176,6 +176,15 @@ describe('CookieDatabase', () => {
   });
 
   describe('Site Profile Operations', () => {
+    it('should persist a pinned profile after reopening the database', async () => {
+      const pinnedProfile = { ...mockSiteProfile, isPinned: true };
+      await db.upsertSiteProfile(pinnedProfile);
+      await db.close();
+      await db.init(dbName, 1);
+
+      expect(await db.getSiteProfile(pinnedProfile.domain)).toEqual(pinnedProfile);
+    });
+
     it('should insert and retrieve it', async () => {
       await db.upsertSiteProfile(mockSiteProfile);
 

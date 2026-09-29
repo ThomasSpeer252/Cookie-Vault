@@ -4,15 +4,27 @@ import { escapeHtml } from './cookie_format';
 import { renderSettings } from './main_settings';
 import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
-import { CookieDatabase } from '../db/CookieDatabase';
+import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
 
 let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
 
+async function loadSites(): Promise<CookieSite[]> {
+    const [cookieSites, profiles] = await Promise.all([
+        getCookieSites(),
+        CookieDatabase.getInstance().getAllSiteProfiles(),
+    ]);
+    const pinnedByDomain = new Map(profiles.map(profile => [profile.domain, profile.isPinned]));
+    return cookieSites.map(site => ({
+        ...site,
+        isPinned: pinnedByDomain.get(site.domain) ?? false,
+    }));
+}
+
 async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle): Promise<void> {
     try {
-        sites = await getCookieSites();
+        sites = await loadSites();
     } catch (error) {
         if (overlay) throw error;
         loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
@@ -28,7 +40,7 @@ async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle)
 
     if (!overlay) closeAllOverlays();
     let detailsOverlay: OverlayHandle | null = overlay ?? null;
-    renderSiteDetails(
+    detailsOverlay = renderSiteDetails(
         site,
         () => openSiteDetailsForDomain(domain, detailsOverlay ?? undefined),
         overlay,
@@ -144,15 +156,34 @@ async function renderSiteList() {
         container.appendChild(card);
     }
 
-    container.querySelectorAll('[data-action="pin-site"]').forEach(button => {
-        button.addEventListener('click', event => {
-            const domain = (event.currentTarget as HTMLButtonElement).dataset.site;
+    container.querySelectorAll<HTMLButtonElement>('[data-action="pin-site"]').forEach(button => {
+        button.addEventListener('click', async event => {
+            const pinButton = event.currentTarget as HTMLButtonElement;
+            const domain = pinButton.dataset.site;
             const site = sites.find(candidate => candidate.domain === domain);
-            if (site) {
+            if (!site) return;
+
+            pinButton.disabled = true;
+            try {
+                const db = CookieDatabase.getInstance();
+                const existingProfile = await db.getSiteProfile(site.domain);
+                const profile: SiteProfile = existingProfile ?? {
+                    domain: site.domain,
+                    durationStartAt: null,
+                    safetyScore: null,
+                    securityFlags: [],
+                    permissions: [],
+                    isFlagged: false,
+                    isPinned: false,
+                };
+                await db.upsertSiteProfile({ ...profile, isPinned: !site.isPinned });
                 site.isPinned = !site.isPinned;
-                void renderSiteList();
+                await renderSiteList();
+            } catch (error) {
+                pinButton.disabled = false;
+                pinButton.title = error instanceof Error ? error.message : 'Unable to save pin state.';
             }
-        })
+        });
     });
 
     container.querySelectorAll('[data-action="settings-site"]').forEach(button => {
@@ -206,7 +237,7 @@ async function loadCookies() {
     renderSiteList();
 
     try {
-        sites = await getCookieSites();
+        sites = await loadSites();
     } catch (error) {
         loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
     } finally {
