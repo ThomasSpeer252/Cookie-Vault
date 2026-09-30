@@ -151,7 +151,10 @@ export function renderSiteDetails(
 
     if (!overlay) return null;
     const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-details"]');
-    closeButton?.addEventListener('click', overlay.close);
+    closeButton?.addEventListener('click', () => {
+        overlay.close();
+        void refreshSite();
+    });
     closeButton?.focus();
 
     // Attach to the replaced content so refreshes do not accumulate click handlers.

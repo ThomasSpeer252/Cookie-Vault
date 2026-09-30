@@ -42,7 +42,10 @@ async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle)
     let detailsOverlay: OverlayHandle | null = overlay ?? null;
     detailsOverlay = renderSiteDetails(
         site,
-        () => openSiteDetailsForDomain(domain, detailsOverlay ?? undefined),
+        async () => {
+            await loadCookies(),
+            await openSiteDetailsForDomain(domain, detailsOverlay ?? undefined);
+        },
         overlay,
     );
 }
