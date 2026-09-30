@@ -1,4 +1,4 @@
-import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie, findCookieInSite } from './cookie_actions';
+import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie} from './cookie_actions';
 import { toVaultCookie, type CookieSite, type SiteCookie } from './cookie_data';
 import { CookieDatabase } from '../db/CookieDatabase';
 import { openCookieEdit } from './cookie_edit';

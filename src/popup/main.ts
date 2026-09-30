@@ -5,6 +5,7 @@ import { renderSettings } from './main_settings';
 import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
 import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
+import { deleteSpecificCookie } from './cookie_actions';
 
 let sites: CookieSite[] = [];
 let isLoading = true;
@@ -196,6 +197,25 @@ async function renderSiteList() {
                 candidate.domain === domainAttr
                 || escapeHtml(candidate.domain) === domainAttr);
             if (site) void openSiteDetailsForDomain(site.domain);
+        });
+    });
+
+    container.querySelectorAll('[data-action="delete-site"]').forEach(button => {
+        button.addEventListener('click', async event => {
+            const deleteButton = event.currentTarget as HTMLButtonElement;
+            const domain = deleteButton.dataset.site;
+            const site = sites.find(candidate => candidate.domain === domain);
+            if (!site) return;
+
+            deleteButton.disabled = true;
+
+            try {
+                await Promise.all(site.cookies.map(cookie => deleteSpecificCookie(cookie)));
+                await loadCookies();
+            } catch (error) {
+                deleteButton.disabled = false;
+                loadError = error instanceof Error ? error.message : 'Unable to delete site cookies.';
+            }
         });
     });
 }
