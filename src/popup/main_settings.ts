@@ -1,5 +1,6 @@
 import { openOverlay } from './overlay';
 import { applyTheme } from './theme';
+import {renderLog} from './operation_log.ts';
 
 const DEFAULT_SETTINGS: Settings = {
   autoDel: false,
@@ -89,7 +90,7 @@ export async function renderSettings() {
               <span class="settings-label">Operation Log</span>
               <span class="settings-minor">Activity history and alerts</span>
           </div>
-          <button class="settings-view-btn">☱ View</button>
+          <button class="settings-view-btn op-log">☱ View</button>
         </div>
 
         <button class="unvault-all-btn">Unvault Everything </button>
@@ -103,6 +104,8 @@ export async function renderSettings() {
 
   overlay.element.querySelectorAll<HTMLInputElement>('input[data-key]').forEach(checkbox => {
     const key = checkbox.dataset.key as keyof Settings;
+
+    overlay.element.querySelector('.op-log')?.addEventListener('click', renderLog);
     
     checkbox.checked = Boolean(settings[key]);
     checkbox.addEventListener('change', () => {

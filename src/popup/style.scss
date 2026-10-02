@@ -250,10 +250,6 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: space-between;
 
-  .pin-btn-on {
-    color: var(--accent-amber);
-  }
-
   // Left icons: Status dot and name
 
   .site-info {
@@ -294,6 +290,11 @@ input:checked + .slider:before {
       background: var(--surface-3);
       border-radius: 9999px;
       font-size: 10px;
+
+      &--vaulted {
+        color: var(--accent-amber);
+        background: rgba(251, 191, 36, 0.16);
+      }
     }
   }
 }

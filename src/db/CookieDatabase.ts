@@ -9,7 +9,7 @@ export interface Cookie {
   value: string
   domain: string
   path: string
-  partitionKey: string | null
+  partitionKey: chrome.cookies.CookiePartitionKey | null
   expirationDate: number | null // Unix timestamp
   hostOnly: boolean
   session: boolean
@@ -35,6 +35,17 @@ export interface VaultState {
 }
 
 export class CookieDatabase {
+  private static instance: CookieDatabase | null = null;
+
+  private constructor() {}
+
+  public static getInstance(): CookieDatabase {
+    if (!CookieDatabase.instance) {
+      CookieDatabase.instance = new CookieDatabase();
+    }
+    return CookieDatabase.instance;
+  }
+
   /**
    * @description Data Access Object for IndexedDB operations
    * @property {IDBDatabase | null} db - IndexedDB instance
