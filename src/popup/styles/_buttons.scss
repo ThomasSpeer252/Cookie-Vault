@@ -1,5 +1,4 @@
-// Every icon-only action shares one visual treatment. Behavior is identified
-// with data-action attributes instead of additional styling classes.
+// Icon-only actions share a base treatment, with state-specific classes where needed.
 .icon-btn {
   display: inline-flex;
   align-items: center;
@@ -21,6 +20,15 @@
   &:hover {
     background: var(--surface-3);
     opacity: 1;
+  }
+
+  &.icon-btn--amber {
+    color: var(--accent-amber);
+    opacity: 1;
+
+    &:hover {
+      background: rgba(251, 191, 36, 0.18);
+    }
   }
 
   &[data-action^='delete']:hover {

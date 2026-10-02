@@ -2,34 +2,60 @@ import './style.scss';
 import { getCookieSites, type CookieSite } from './cookie_data';
 import { escapeHtml } from './cookie_format';
 import { getSettings, renderSettings } from './main_settings';
-import { closeAllOverlays } from './overlay';
+import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
+import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
 import { applyTheme } from './theme';
 
 let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
 
-async function openSiteDetailsForDomain(domain: string): Promise<void> {
-    closeAllOverlays();
+async function loadSites(): Promise<CookieSite[]> {
+    const [cookieSites, profiles] = await Promise.all([
+        getCookieSites(),
+        CookieDatabase.getInstance().getAllSiteProfiles(),
+    ]);
+    const pinnedByDomain = new Map(profiles.map(profile => [profile.domain, profile.isPinned]));
+    return cookieSites.map(site => ({
+        ...site,
+        isPinned: pinnedByDomain.get(site.domain) ?? false,
+    }));
+}
 
+async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle): Promise<void> {
     try {
-        sites = await getCookieSites();
+        sites = await loadSites();
     } catch (error) {
+        if (overlay) throw error;
         loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
         void renderSiteList();
         return;
     }
 
     const site = sites.find((candidate) => candidate.domain === domain);
-    if (!site) return;
+    if (!site) {
+        overlay?.close();
+        return;
+    }
 
-    renderSiteDetails(site, () => openSiteDetailsForDomain(domain));
+    if (!overlay) closeAllOverlays();
+    let detailsOverlay: OverlayHandle | null = overlay ?? null;
+    detailsOverlay = renderSiteDetails(
+        site,
+        () => openSiteDetailsForDomain(domain, detailsOverlay ?? undefined),
+        overlay,
+    );
 }
 
 async function renderSiteList() {
     const container = document.getElementById('site-list');
     if (!container) return;
+
+    if (loadError) {
+        container.innerHTML = `<p class="list-state list-state--error">${escapeHtml(loadError)}</p>`;
+        return;
+    }
 
     // Check for permissions to view sites/cookies. Prompt if needed
     const hasPermission = await chrome.permissions.contains({permissions: ['cookies'], origins: ['<all_urls>']});
@@ -52,11 +78,6 @@ async function renderSiteList() {
         return;
     }
 
-    if (loadError) {
-        container.innerHTML = `<p class="list-state list-state--error">${escapeHtml(loadError)}</p>`;
-        return;
-    }
-
     const filterText = searchInput?.value.toLowerCase() || '';
     const showVaulted = vaultCheck?.checked ?? true;
     const showUnvaulted = unvaultCheck?.checked ?? true;
@@ -65,7 +86,8 @@ async function renderSiteList() {
 
     const filteredSites = sites.filter(site => {
         const matchesText = site.domain.toLowerCase().includes(filterText);
-        const matchesCategory = (site.isVaulted && showVaulted) || (!site.isVaulted && showUnvaulted);
+        const matchesCategory = (showVaulted && site.cookies.some(cookie => cookie.isVaulted))
+            || (showUnvaulted && site.cookies.some(cookie => !cookie.isVaulted));
         const matchesStatus = (site.allSecure && showSafe) || (!site.allSecure && showFlagged);
         return matchesText && matchesCategory && matchesStatus;
     }).sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
@@ -86,7 +108,8 @@ async function renderSiteList() {
             ? 'All cookies have the Secure flag'
             : 'Contains cookies without the Secure flag';
         const domain = escapeHtml(site.domain);
-        const pinned = site.isPinned ? ' site-card--pinned' : '';
+        const pinned = site.isPinned;
+        const vaultedCount = site.cookies.filter(cookie => cookie.isVaulted).length;
 
         card.innerHTML = `
           <div class="site-info">
@@ -94,10 +117,11 @@ async function renderSiteList() {
               title="${secureStatus}"></span>
             <span class="site-name" title="${domain}">${domain}</span>
             <span class="site-cookie-count">${site.cookies.length}</span>
+            ${vaultedCount > 0 ? `<span class="site-cookie-count site-cookie-count--vaulted" title="Vaulted cookies for this site" aria-label="${vaultedCount} vaulted cookies">${vaultedCount}</span>` : ''}
           </div>
 
           <div class="button-group">
-            <button type="button" class="icon-btn ${pinned ? 'pin-btn-on' : ''}" data-action="pin-site"
+            <button type="button" class="icon-btn${pinned ? ' icon-btn--amber' : ''}" data-action="pin-site"
               title="${pinned ? 'Unpin Site' : 'Pin Site'}" data-site="${domain}">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
     <path d="M4 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5H10.5v3.636l1.205 1.808A.75.75 0 0 1 11.08 10H8.75v3.75a.75.75 0 0 1-1.5 0V10H4.92a.75.75 0 0 1-.624-1.166L5.5 7.026V3.25H4.75A.75.75 0 0 1 4 2.5Z"/>
@@ -133,15 +157,34 @@ async function renderSiteList() {
         container.appendChild(card);
     }
 
-    container.querySelectorAll('[data-action="pin-site"]').forEach(button => {
-        button.addEventListener('click', event => {
-            const domain = (event.currentTarget as HTMLButtonElement).dataset.site;
+    container.querySelectorAll<HTMLButtonElement>('[data-action="pin-site"]').forEach(button => {
+        button.addEventListener('click', async event => {
+            const pinButton = event.currentTarget as HTMLButtonElement;
+            const domain = pinButton.dataset.site;
             const site = sites.find(candidate => candidate.domain === domain);
-            if (site) {
+            if (!site) return;
+
+            pinButton.disabled = true;
+            try {
+                const db = CookieDatabase.getInstance();
+                const existingProfile = await db.getSiteProfile(site.domain);
+                const profile: SiteProfile = existingProfile ?? {
+                    domain: site.domain,
+                    durationStartAt: null,
+                    safetyScore: null,
+                    securityFlags: [],
+                    permissions: [],
+                    isFlagged: false,
+                    isPinned: false,
+                };
+                await db.upsertSiteProfile({ ...profile, isPinned: !site.isPinned });
                 site.isPinned = !site.isPinned;
-                void renderSiteList();
+                await renderSiteList();
+            } catch (error) {
+                pinButton.disabled = false;
+                pinButton.title = error instanceof Error ? error.message : 'Unable to save pin state.';
             }
-        })
+        });
     });
 
     container.querySelectorAll('[data-action="settings-site"]').forEach(button => {
@@ -195,7 +238,7 @@ async function loadCookies() {
     renderSiteList();
 
     try {
-        sites = await getCookieSites();
+        sites = await loadSites();
     } catch (error) {
         loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
     } finally {
@@ -217,5 +260,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const settings = await getSettings();
     applyTheme(settings.darkMode);
     bindHomeEventListeners();
+    try {
+        await CookieDatabase.getInstance().init();
+    } catch (error) {
+        isLoading = false;
+        loadError = error instanceof Error ? error.message : 'Unable to open the cookie vault.';
+        await renderSiteList();
+        return;
+    }
     void loadCookies();
 });
