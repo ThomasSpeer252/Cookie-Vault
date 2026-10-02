@@ -665,15 +665,105 @@ input:checked + .slider:before {
         text-align: right;
 
         &.score-badge {
-          background: rgba(52, 211, 153, 0.15);
-          color: var(--accent-green);
           padding: 1px 6px;
           border-radius: 4px;
+
+          &.score-badge--good {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--accent-green);
+          }
+
+          &.score-badge--ok {
+            background: rgba(96, 165, 250, 0.15);
+            color: var(--accent-blue);
+          }
+
+          &.score-badge--warn {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-amber);
+          }
+
+          &.score-badge--bad {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--accent-red);
+          }
+
+          &.score-badge--empty {
+            background: var(--surface-3);
+            color: var(--text-muted);
+          }
         }
 
         &.status-green {
           color: var(--accent-green);
         }
+      }
+
+      &.profile-row--stacked {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+
+        .profile-value {
+          max-width: none;
+          text-align: left;
+        }
+      }
+    }
+
+    .cookie-security-summary {
+      margin: 0 0 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      line-height: 1.4;
+    }
+
+    .cookie-security-findings {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .cookie-security-finding {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 6px;
+      align-items: start;
+      font-size: 11px;
+      line-height: 1.35;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-1);
+
+      &__deduction {
+        font-family: var(--font-mono);
+        color: var(--accent-amber);
+        font-weight: 600;
+      }
+
+      &__text {
+        color: var(--text-secondary);
+        font-family: var(--font-sans);
+      }
+
+      &__cookie {
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        max-width: 72px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &--minor .cookie-security-finding__deduction {
+        color: var(--text-muted);
       }
     }
   }
