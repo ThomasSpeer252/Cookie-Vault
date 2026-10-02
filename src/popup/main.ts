@@ -1,11 +1,13 @@
 import './style.scss';
 import { getCookieSites, type CookieSite } from './cookie_data';
 import { escapeHtml } from './cookie_format';
-import { renderSettings } from './main_settings';
+import { getSettings, renderSettings } from './main_settings';
 import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
 import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
+import { applyTheme } from './theme';
 import { deleteSpecificCookie } from './cookie_actions';
+
 
 let sites: CookieSite[] = [];
 let isLoading = true;
@@ -279,6 +281,8 @@ function bindHomeEventListeners() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    const settings = await getSettings();
+    applyTheme(settings.darkMode);
     bindHomeEventListeners();
     try {
         await CookieDatabase.getInstance().init();
