@@ -180,9 +180,19 @@ export function renderSiteDetails(
         try {
             if (button.dataset.action === 'delete-cookie') {
                 await deleteSpecificCookie(cookie);
-                const cookieContainerElement = button.parentElement.parentElement.parentElement as HTMLElement;
-                button.parentElement.parentElement.remove();
-                if (cookieContainerElement.children.length === 0) {
+
+                let nextCookie = row.nextElementSibling as HTMLElement | null;
+                let index = Number(row.dataset.cookieIndex);
+
+                while (nextCookie) {
+                    nextCookie.dataset.cookieIndex = String(index++);
+                    nextCookie = nextCookie.nextElementSibling as HTMLElement | null;
+                }
+
+                row.remove();
+                site.cookies.splice(Number(row.dataset.cookieIndex), 1);
+
+                if (site.cookies.length === 0) {
                     overlay.close();
                     await refreshSite();
                     return;
