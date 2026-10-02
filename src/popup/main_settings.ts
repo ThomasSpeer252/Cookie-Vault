@@ -115,7 +115,7 @@ export async function renderSettings() {
       await saveSettings(settings);
       
       if (key === 'darkMode') {
-        console.log('Checked');
+        // console.log('Checked');
         applyTheme(checkbox.checked);
      };
    });
