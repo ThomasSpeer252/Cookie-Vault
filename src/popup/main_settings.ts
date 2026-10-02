@@ -1,20 +1,21 @@
 import { openOverlay } from './overlay';
+import { applyTheme } from './theme';
 
 const DEFAULT_SETTINGS: Settings = {
-  active: true,
   autoDel: false,
   autoVault: false,
+  detectionActive: false,
   darkMode: true
 }
 
 export interface Settings {
-  active: Boolean;
-  autoDel: Boolean;
-  autoVault: Boolean;
-  darkMode: Boolean;
+  detectionActive: boolean;
+  autoDel: boolean;
+  autoVault: boolean;
+  darkMode: boolean;
 }
 
-async function getSettings(): Promise<Settings> {
+export async function getSettings(): Promise<Settings> {
   // No promise wrapper because chrome API handles that on its own
   return chrome.storage.sync.get(DEFAULT_SETTINGS) as Promise<Settings>;
 }
@@ -40,11 +41,11 @@ export async function renderSettings() {
       <div class="settings-grid info-grid">
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Extension Active</span>
-              <span class="settings-minor">Enable cookie monitoring</span>
+              <span class="settings-label">Dark Mode</span>
+              <span class="settings-minor">Toggle light/dark interface</span>
           </div>
           <label class="switch">
-            <input type="checkbox" data-key="active">
+            <input type="checkbox" data-key="darkMode">
             <span class="slider round"></span>
           </label>
         </div>
@@ -73,11 +74,11 @@ export async function renderSettings() {
 
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Dark Mode</span>
-              <span class="settings-minor">Toggle light/dark interface</span>
+              <span class="settings-label">Detection Active</span>
+              <span class="settings-minor">Enable XSS/CSRF detection (Stretch)</span>
           </div>
           <label class="switch">
-            <input type="checkbox" data-key="darkMode">
+            <input type="checkbox" data-key="detectionActive">
             <span class="slider round"></span>
           </label>
         </div>
@@ -105,12 +106,21 @@ export async function renderSettings() {
     
     checkbox.checked = Boolean(settings[key]);
     checkbox.addEventListener('change', () => {
-      // console.log('Checked');
       settings[key] = checkbox.checked;
       saveSettings(settings);
-
     });
+    
+    checkbox.addEventListener('change', async () => {
+      settings[key] = checkbox.checked;
+      await saveSettings(settings);
+      
+      if (key === 'darkMode') {
+        // console.log('Checked');
+        applyTheme(checkbox.checked);
+     };
+   });
   });
+  
 
   const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
   closeButton?.addEventListener('click', overlay.close);
