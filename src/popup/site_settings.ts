@@ -1,5 +1,5 @@
-import { removeBrowserCookie, restoreBrowserCookie } from './cookie_actions';
-import { toVaultCookie, type CookieSite, type SiteCookie } from './cookie_data';
+import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie} from './cookie_actions';
+import {toVaultCookie, type CookieSite, type SiteCookie, getCookieSites} from './cookie_data';
 import { CookieDatabase } from '../db/CookieDatabase';
 import { openCookieEdit } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
@@ -73,24 +73,29 @@ export function renderSiteDetails(
     refreshSite: () => void | Promise<void>,
     existingOverlay?: OverlayHandle,
 ): OverlayHandle | null {
+    async function renderSelf() {
+        const scrollContainer = overlay?.element.querySelector<HTMLElement>('.cookie-list-container');
+        const savedScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+
+        const freshSites = await getCookieSites();
+        const freshSite = freshSites.find(s => s.domain === site.domain);
+
+        if (!freshSite || freshSite.cookies.length === 0) {
+            overlay?.close();
+            await refreshSite();
+            return;
+        }
+
+        renderSiteDetails(freshSite, refreshSite, overlay);
+
+        const newScrollContainer = overlay?.element.querySelector<HTMLElement>('.cookie-list-container');
+        if (newScrollContainer) {
+            newScrollContainer.scrollTop = savedScrollTop;
+        }
+    }
+
     const secureCount = site.cookies.filter(cookie => cookie.secure).length;
     const httpOnlyCount = site.cookies.filter(cookie => cookie.httpOnly).length;
-
-    /*
-    const sessionCount = site.cookies.filter(cookie => cookie.session).length;
-    const partitionedCount = site.cookies.filter(cookie => cookie.partitionKey).length;
-
-    const extendedSiteData = `
-      <div class="profile-row">
-        <span class="profile-label">Session</span>
-        <span class="profile-value">${sessionCount} / ${site.cookies.length}</span>
-      </div>
-      <div class="profile-row">
-        <span class="profile-label">Partitioned</span>
-        <span class="profile-value">${partitionedCount} / ${site.cookies.length}</span>
-      </div>
-    `;
-    */
 
     const content = `
       <div class="site-details-view">
@@ -151,12 +156,14 @@ export function renderSiteDetails(
 
     if (!overlay) return null;
     const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-details"]');
-    closeButton?.addEventListener('click', overlay.close);
-    closeButton?.focus();
+    closeButton?.addEventListener('click', () => {
+        overlay.close();
+        void refreshSite();
+    });
 
     // Attach to the replaced content so refreshes do not accumulate click handlers.
     overlay.element.querySelector('.site-details-view')?.addEventListener('click', async (event) => {
-        const button = (event.target as Element).closest<HTMLButtonElement>('[data-action="edit-cookie"], [data-action="lock-cookie"]');
+        const button = (event.target as Element).closest<HTMLButtonElement>('[data-action="edit-cookie"], [data-action="lock-cookie"], [data-action="delete-cookie"]');
         if (!button) return;
 
         const row = button.closest<HTMLElement>('.cookie-row');
@@ -166,7 +173,9 @@ export function renderSiteDetails(
         if (!cookie) return;
 
         if (button.dataset.action === 'edit-cookie') {
-            if (!cookie.isVaulted) openCookieEdit(cookie, refreshSite);
+            if (!cookie.isVaulted) {
+                openCookieEdit(cookie, async () => {await renderSelf();});
+            }
             return;
         }
 
@@ -175,8 +184,13 @@ export function renderSiteDetails(
         if (errorEl) errorEl.hidden = true;
 
         try {
-            await moveCookie(cookie);
-            await refreshSite();
+            if (button.dataset.action === 'delete-cookie') {
+                await deleteSpecificCookie(cookie);
+                //await renderSelf();
+            } else {
+                await moveCookie(cookie);
+            }
+            await renderSelf();
         } catch (error) {
             button.disabled = false;
             if (errorEl) {
