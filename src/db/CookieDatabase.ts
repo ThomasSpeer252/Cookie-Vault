@@ -1,5 +1,5 @@
 const DB_NAME = 'CookieVaultDB'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export interface Cookie {
   // Unique ID (Chrome uses a combo of name, domain, path, and partitionKey)
