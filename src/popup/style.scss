@@ -758,3 +758,66 @@ input:checked + .slider:before {
     background-color: var(--surface-3);
   }
 }
+
+// Operation Log Popup
+.entry-count {
+  color: var(--text-muted);
+  background-color: var(--surface-3);
+  padding: 4px;
+  font-size: 10px;
+}
+
+.operation-grid {
+  display: flex;
+  font-family: var(--font-mono);
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-1);
+  padding-bottom: 4px;
+
+  .operation-col {
+    font-family: var(--font-mono);
+    color: var(--text-muted);
+
+    .operation-header {
+      font-size: 10px;
+    }
+  }
+
+}
+
+.operation-events {
+  display: flex;
+  flex-direction: column;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+
+}
+
+
+.unvault-all-btn {
+  display: flex;
+  background-color: var(--surface-2);
+  justify-content: center;
+  align-items: center;
+  font-family: var(--font-sans);
+  color: var(--accent-blue);
+  border-width: 1px;
+  border-style: solid;
+  border-color: var(--accent-blue);
+  border-radius: 8px;
+  height: 36px;
+  cursor: pointer;
+  transition-duration: .1s;
+
+  &:hover {
+        background-color: var(--surface-4);
+      }
+
+  &:active {
+    background-color: var(--surface-3);
+  }
+}
