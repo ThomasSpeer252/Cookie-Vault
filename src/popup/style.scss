@@ -772,7 +772,7 @@ input:checked + .slider:before {
   font-family: var(--font-mono);
   color: var(--text-muted);
   min-height: 94%;
-
+  
   .operation-grid {
     display: grid;
     grid-template-columns: 96px 96px 1fr;
@@ -780,12 +780,20 @@ input:checked + .slider:before {
     border-bottom: 1px solid var(--border-1);
     padding-bottom: 4px;
   }
-
+  
   .operation-events {
     display: flex;
     flex-direction: column;
     max-height: 340px;
     overflow-y: auto;
+    overflow-x: auto;
+    scrollbar-gutter: stable;
+    
+    @include mixins.compact-scrollbar;
+
+    &::-webkit-scrollbar {
+      height: 6px;
+    }
   }
 
   // individ event/operation
