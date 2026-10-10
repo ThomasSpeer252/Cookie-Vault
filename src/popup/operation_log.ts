@@ -53,7 +53,7 @@ export async function getOperations() {
 }
 
 export async function recordOperation(op: OperationType, detail: string, site: string = ALL_SITES) {
-  // TODO: When warning and blocking is implemented, record those operations as well in their respective files
+  // TODO: When coooke deletion + warning and blocking is implemented, record those operations as well in their respective files
   try {
     await CookieDatabase.getInstance().addLogEntry({
       domain: op.endsWith('_ALL') ? ALL_SITES : site,
@@ -66,6 +66,19 @@ export async function recordOperation(op: OperationType, detail: string, site: s
     return;
   }
 };
+
+async function clearLog(root: HTMLElement) {
+  try {
+    await CookieDatabase.getInstance().clearLogEntries();
+  } catch (error) {
+    opError = error instanceof Error ? error.message : 'Failed to clear log.';
+    return;
+  }
+  const events = root.querySelector('.operation-events');
+  const count = root.querySelector('.entry-count');
+  if (events) events.innerHTML = '';
+  if (count) count.textContent = '0 entries';
+}
 
 function renderEvent(entry: OperationEntry): string {
   const date = new Date(entry.timestamp);
@@ -80,7 +93,7 @@ function renderEvent(entry: OperationEntry): string {
         <span class="operation-badge operation-badge-${OP_TYPES[entry.op]}">${(entry.op)}</span>
       </div>
       <div class="operation-col detail">
-        <span class="operation-type">${(entry.type)}</span>
+        <span class="operation-detail">${(entry.type)}</span>
         <span class="operation-site">${(entry.site)}</span>
       </div>
     </div>`;
@@ -97,6 +110,7 @@ export async function renderLog() {
         <div class="header-title">
           <span class="mono-label">OPERATION LOG</span>
           <span class="entry-count">${operations.length} ${entryLabel}</span>
+          <button class="clear-log-btn" data-action="clear-log">Clear Log</span>
         </div>          
         <button class="icon-btn" data-action="close-settings" title="Close">✕</button>
       </header>
@@ -125,4 +139,7 @@ export async function renderLog() {
   const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
   closeButton?.addEventListener('click', overlay.close);
   closeButton?.focus();
+
+  const clearButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="clear-log"]');
+  clearButton?.addEventListener('click', () => clearLog(overlay.element));
 }

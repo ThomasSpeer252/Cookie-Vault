@@ -88,7 +88,6 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
           </label>
         </div>
 
-        <!-- TODO: Operation log should open a new page on the extension and show a read-only log of cookie usage -->
         <div class="settings-row">
           <div class="settings-info">
               <span class="settings-label">Operation Log</span>
