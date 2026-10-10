@@ -6,6 +6,8 @@ import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
 import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
 import { applyTheme } from './theme';
+import { deleteSpecificCookie } from './cookie_actions';
+
 
 let sites: CookieSite[] = [];
 let isLoading = true;
@@ -44,7 +46,9 @@ async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle)
     let detailsOverlay: OverlayHandle | null = overlay ?? null;
     detailsOverlay = renderSiteDetails(
         site,
-        () => openSiteDetailsForDomain(domain, detailsOverlay ?? undefined),
+        async () => {
+            await updateSiteCard(domain);
+        },
         overlay,
     );
 }
@@ -197,6 +201,25 @@ async function renderSiteList() {
             if (site) void openSiteDetailsForDomain(site.domain);
         });
     });
+
+    container.querySelectorAll('[data-action="delete-site"]').forEach(button => {
+        button.addEventListener('click', async event => {
+            const deleteButton = event.currentTarget as HTMLButtonElement;
+            const domain = deleteButton.dataset.site;
+            const site = sites.find(candidate => candidate.domain === domain);
+            if (!site) return;
+
+            deleteButton.disabled = true;
+
+            try {
+                await Promise.all(site.cookies.map(cookie => deleteSpecificCookie(cookie)));
+                await updateSiteCard(domain);
+            } catch (error) {
+                deleteButton.disabled = false;
+                loadError = error instanceof Error ? error.message : 'Unable to delete site cookies.';
+            }
+        });
+    });
 }
 
 function renderPermissionPrompt() {
@@ -245,6 +268,74 @@ async function loadCookies() {
     } finally {
         isLoading = false;
         renderSiteList();
+    }
+}
+
+export async function updateSiteCard(domain: string): Promise<void> {
+    const freshSites = await loadSites();
+    const freshSite = freshSites.find(s => s.domain === domain);
+
+    if (freshSite && freshSite.cookies.length > 0) {
+        const index = sites.findIndex(s => s.domain === domain);
+        if (index !== -1) {
+            sites[index] = freshSite;
+        }
+    } else {
+        sites = sites.filter(s => s.domain !== domain);
+    }
+
+    const deleteBtn = document.querySelector<HTMLButtonElement>(`[data-action="delete-site"][data-site="${CSS.escape(domain)}"]`);
+    const card = deleteBtn?.closest<HTMLElement>('.site-card');
+
+    // Delete card if site has no cookies
+    if (!freshSite || freshSite.cookies.length === 0) {
+        card?.remove();
+
+        // If every single cookie is deleted, we need the 'no results' message
+        const container = document.getElementById('site-list');
+        if (container && container.children.length === 0) {
+            await renderSiteList();
+        }
+        return;
+    }
+
+    // Otherwise, update site card
+
+    if (card) {
+        const statusDot = card.querySelector<HTMLElement>('.status-dot');
+        const cookieCount = card.querySelector<HTMLElement>('.site-cookie-count');
+        const vaultedBadge = card.querySelector<HTMLElement>('.site-cookie-count--vaulted');
+
+        // We plan on changing how status dot works later. Make sure to update
+        if (statusDot) {
+            statusDot.className = `status-dot status-dot--${freshSite.allSecure ? 'safe' : 'unsafe'}`;
+            statusDot.title = freshSite.allSecure
+                ? 'All cookies have the Secure flag'
+                : 'Contains cookies without the Secure flag';
+        }
+
+        if (cookieCount) {
+            cookieCount.textContent = String(freshSite.cookies.length);
+        }
+
+        const vaultedCount = freshSite.cookies.filter(c => c.isVaulted).length;
+        if (vaultedCount > 0) {
+            if (vaultedBadge) {
+                vaultedBadge.textContent = String(vaultedCount);
+            } else {
+                const infoContainer = card.querySelector('.site-info');
+                if (infoContainer) {
+                    const badge = document.createElement('span');
+                    badge.className = 'site-cookie-count site-cookie-count--vaulted';
+                    badge.title = 'Vaulted cookies for this site';
+                    badge.setAttribute('aria-label', `${vaultedCount} vaulted cookies`);
+                    badge.textContent = String(vaultedCount);
+                    infoContainer.appendChild(badge);
+                }
+            }
+        } else {
+            vaultedBadge?.remove();
+        }
     }
 }
 
