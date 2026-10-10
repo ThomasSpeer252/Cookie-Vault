@@ -851,8 +851,8 @@ input:checked + .slider:before {
   color: var(--accent-blue);
   border-width: 1px;
   border-style: solid;
-  border-color: var(--accent-blue);
-  border-radius: 8px;
+  border-color: var(--border-2);
+  border-radius: 4px;
   height: 18px;
   cursor: pointer;
   transition-duration: .1s;
