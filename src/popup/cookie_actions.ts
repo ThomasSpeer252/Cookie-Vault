@@ -1,7 +1,13 @@
+import { recordOperation } from "./operation_log";
+
 export function cookieUrl(cookie: chrome.cookies.Cookie): string {
     const host = cookie.domain.replace(/^\./, '');
     const scheme = cookie.secure ? 'https' : 'http';
     return `${scheme}://${host}${cookie.path || '/'}`;
+}
+
+function cleanUrl(url: string): string {
+    return url.replace(/^https?:\/\/?|\/+$/g, '');
 }
 
 export async function removeBrowserCookie(cookie: chrome.cookies.Cookie): Promise<void> {
@@ -11,6 +17,7 @@ export async function removeBrowserCookie(cookie: chrome.cookies.Cookie): Promis
         storeId: cookie.storeId,
         ...(cookie.partitionKey ? { partitionKey: cookie.partitionKey } : {}),
     });
+    recordOperation("VAULT", `${cookie.name} vaulted`, cleanUrl(cookieUrl(cookie)));
 }
 
 export async function restoreBrowserCookie(cookie: chrome.cookies.Cookie): Promise<void> {
@@ -29,6 +36,7 @@ export async function restoreBrowserCookie(cookie: chrome.cookies.Cookie): Promi
             ? { expirationDate: cookie.expirationDate } : {}),
     });
     if (!restored) throw new Error('The browser did not restore the cookie.');
+    recordOperation("UNVAULT", `${cookie.name} unvaulted`, cleanUrl(cookieUrl(cookie)));
 }
 
 function promisify<T>(fn: (cb: (result: T) => void) => void): Promise<T> {

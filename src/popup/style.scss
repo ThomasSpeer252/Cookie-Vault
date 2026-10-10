@@ -767,57 +767,65 @@ input:checked + .slider:before {
   font-size: 10px;
 }
 
-.operation-grid {
-  display: flex;
-  font-family: var(--font-mono);
-  flex-direction: row;
-  gap: 4px;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border-1);
-  padding-bottom: 4px;
-
-  .operation-col {
-    font-family: var(--font-mono);
-    color: var(--text-muted);
-
-    .operation-header {
-      font-size: 10px;
-    }
-  }
-
-}
-
-.operation-events {
-  display: flex;
-  flex-direction: column;
+.operation-card {
   font-size: 10px;
   font-family: var(--font-mono);
   color: var(--text-muted);
 
-}
+  .operation-grid {
+    display: grid;
+    grid-template-columns: 96px 96px 1fr;
+    column-gap: 8px;
+    border-bottom: 1px solid var(--border-1);
+    padding-bottom: 4px;
+  }
 
+  .operation-events {
+    display: flex;
+    flex-direction: column;
+    max-height: 340px;
+    overflow-y: auto;
+  }
 
-.unvault-all-btn {
-  display: flex;
-  background-color: var(--surface-2);
-  justify-content: center;
-  align-items: center;
-  font-family: var(--font-sans);
-  color: var(--accent-blue);
-  border-width: 1px;
-  border-style: solid;
-  border-color: var(--accent-blue);
-  border-radius: 8px;
-  height: 36px;
-  cursor: pointer;
-  transition-duration: .1s;
+  // individ event/operation
+  .operation-entry {
+    display: grid;
+    grid-template-columns: 96px 96px 1fr;
+    column-gap: 8px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-1);
+  }
 
-  &:hover {
-        background-color: var(--surface-4);
+  .operation-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+
+    .operation-badge {
+      background-color: var(--surface-3);
+      padding: 2px 4px;
+      border-radius: 4px;
+      align-self: flex-start;
+
+      &-vault, &-vault-all {
+        color: var(--accent-blue);
+      }
+      
+      &-unvault, &-unvault-all {
+        background-color: var(--surface-2);
       }
 
-  &:active {
-    background-color: var(--surface-3);
+      &-warn {
+        color: var(--accent-red);
+      }
+
+      &-block {
+        color: var(--badge-green);
+      }
+    }
+  }
+
+  .operation-title {
+    color: var(--text-secondary);
   }
 }

@@ -1,5 +1,5 @@
 const DB_NAME = 'CookieVaultDB'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 export interface Cookie {
   // Unique ID (Chrome uses a combo of name, domain, path, and partitionKey)
@@ -32,6 +32,16 @@ export interface SiteProfile {
 export interface VaultState {
   isProtectionActive: boolean
   totalCookiesBlocked: number
+}
+
+export type LogOperation = 'vault' | 'unvault' | 'block' | 'warn' | 'delete';
+
+export interface LogEntry {
+  id?: number
+  domain: string
+  timestamp: number // Unix timestamp
+  op: LogOperation
+  detail: string
 }
 
 export class CookieDatabase {
@@ -77,7 +87,7 @@ export class CookieDatabase {
   // }
 
   /**
-   * Initializes the IndexedDB connection and loads existing cookies into the dictionary cache.
+   * Initializes the IndexedDB connection and loads existing cookies into the in-memory cache.
    * @param {string} [dbName] - The name of the database.
    * @param {number} [dbVersion] - The version of the database.
    * @returns {Promise<void>}
@@ -126,6 +136,15 @@ export class CookieDatabase {
         }
         if (!db.objectStoreNames.contains('siteProfiles')) {
           db.createObjectStore('siteProfiles', { keyPath: 'domain' });
+        }
+        if (!db.objectStoreNames.contains('operationLogs')) {
+          const logStore = db.createObjectStore('operationLogs', {
+            keyPath: 'id',
+            autoIncrement: true,
+          });
+
+          logStore.createIndex('timestamp', 'timestamp', { unique: false }); // Useful for sorting logs by time
+          logStore.createIndex('domain', 'domain', { unique: false }); // Useful for filtering by domain.
         }
       };
     });
@@ -337,6 +356,74 @@ export class CookieDatabase {
   }
 
   /**
+   * Adds a log entry to the operationLogs store in the database.
+   * @param {Omit<LogEntry, 'id'>} entry - The log entry to add, excluding the ID.
+   * @returns {Promise<void>}
+   */
+  public async addLogEntry(entry: Omit<LogEntry, 'id'>): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction('operationLogs', 'readwrite');
+      const store = transaction.objectStore('operationLogs');
+
+      store.add(entry);
+
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => {
+        reject(new Error(`Failed to add log entry: ${transaction.error?.message}`));
+      };
+    });
+  }
+
+  /**
+   * 
+   * Retrieves log entries from the database, sorted by timestamp in descending order.
+   * @param {number} [limit=100] - The maximum number of log entries to retrieve.
+   * @returns {Promise<LogEntry[]>} - A promise that resolves to an array of log entries.
+   */
+  public async getLogEntries(limit = 100): Promise<LogEntry[]> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction('operationLogs', 'readonly');
+      const store = transaction.objectStore('operationLogs');
+      const request = store.index('timestamp').getAll();
+
+      request.onsuccess = () => {
+        const entries = request.result as LogEntry[];
+        resolve(
+          entries
+            .sort((a, b) => b.timestamp - a.timestamp)
+            .slice(0, limit)
+        );
+      };
+
+      request.onerror = () => {
+        reject(new Error(`Failed to get log entries: ${request.error?.message}`));
+      };
+    });
+  }
+
+  /**
+   * Clears all log entries from the database.
+   * @returns {Promise<void>}
+   */
+  public async clearLogEntries(): Promise<void> {
+    if (!this.db) throw new Error('Database not initialized');
+
+    return new Promise((resolve, reject) => {
+      const transaction = this.db!.transaction('operationLogs', 'readwrite');
+      const request = transaction.objectStore('operationLogs').clear();
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => {
+        reject(new Error(`Failed to clear log entries: ${request.error?.message}`));
+      };
+    });
+  }
+
+  /**
    * Inserts or updates a site profile in the database.
    * @param {SiteProfile} profile - The site profile to insert or update.
    * @returns {Promise<void>}
@@ -479,12 +566,14 @@ export class CookieDatabase {
     if (!this.db) throw new Error('Database not initialized');
 
     return new Promise((resolve, reject) => {
-      const transaction = this.db!.transaction(['cookies', 'siteProfiles'], 'readwrite');
+      const transaction = this.db!.transaction(['cookies', 'siteProfiles', 'operationLogs'], 'readwrite');
       const cookieStore = transaction.objectStore('cookies');
       const siteProfileStore = transaction.objectStore('siteProfiles');
+      const operationLogStore = transaction.objectStore('operationLogs');
 
       cookieStore.clear();
       siteProfileStore.clear();
+      operationLogStore.clear();
 
       transaction.oncomplete = () => {
         this.cookieDictionary.clear();

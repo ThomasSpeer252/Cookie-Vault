@@ -4,8 +4,8 @@ import { escapeHtml } from './cookie_format';
 import { getSettings, renderSettings } from './main_settings';
 import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
-import { applyTheme } from './theme';
 import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
+import { applyTheme } from './theme';
 
 let sites: CookieSite[] = [];
 let isLoading = true;

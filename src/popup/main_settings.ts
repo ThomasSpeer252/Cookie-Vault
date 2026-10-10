@@ -1,6 +1,6 @@
 import { openOverlay } from './overlay';
 import { applyTheme } from './theme';
-import { renderLog } from './operation_log';
+import { recordOperation, renderLog } from './operation_log';
 import { CookieDatabase } from '../db/CookieDatabase';
 import { fromVaultCookie, type SiteCookie } from './cookie_data';
 import { moveCookie } from './site_settings';
@@ -148,6 +148,7 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
         return;
     } finally {
       unvaultAllButton.disabled = false;
+      recordOperation("UNVAULT_ALL", "All cookies unvaulted")
     }
   });
 }
