@@ -19,6 +19,10 @@ export async function moveCookie(cookie: SiteCookie): Promise<void> {
             throw error;
         }
     } else {
+        try {
+            await db.deleteCookie(cookie.vaultId, cookie.domain);
+        } catch {}
+
         await db.upsertCookie(toVaultCookie(cookie));
         try {
             await removeBrowserCookie(cookie);
