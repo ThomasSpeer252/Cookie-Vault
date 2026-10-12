@@ -123,7 +123,7 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
 
   // All other elements
   overlay.element.querySelector('.op-log')?.addEventListener('click', renderLog);
-  
+
   const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
   closeButton?.addEventListener('click', overlay.close);
   closeButton?.focus();
