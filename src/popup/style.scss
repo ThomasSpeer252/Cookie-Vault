@@ -825,8 +825,12 @@ input:checked + .slider:before {
         background-color: var(--surface-2);
       }
 
-      &-warn {
+      &-delete {
         color: var(--accent-red);
+      }
+
+      &-warn {
+        color: var(--accent-amber);
       }
 
       &-block {

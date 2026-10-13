@@ -15,6 +15,10 @@ export interface OperationEntry {
   site: string;
 }
 
+function cleanUrl(url: string): string {
+    return url.replace(/^https?:\/\/?|\/+$/g, '');
+}
+
 const OP_TYPES: Record<OperationType, string> = {
   VAULT: 'vault',
   VAULT_ALL: 'vault-all',
@@ -56,7 +60,7 @@ export async function recordOperation(op: OperationType, detail: string, site: s
   // TODO: When coooke deletion + warning and blocking is implemented, record those operations as well in their respective files
   try {
     await CookieDatabase.getInstance().addLogEntry({
-      domain: op.endsWith('_ALL') ? ALL_SITES : site,
+      domain: op.endsWith('_ALL') ? ALL_SITES : cleanUrl(site),
       timestamp: Date.now(),
       op: TO_DB_OP[op],
       detail: detail
