@@ -1,7 +1,5 @@
 import type { CookieSite } from './cookie_data';
 
-export const COOKIE_SECURITY_SCORE_VERSION = '1.0.0';
-
 const BASE_1A_SECURE_MISSING = 25;
 const BASE_1B_SAMESITE_NONE_INSECURE = 32;
 const BASE_2A_AUTH_NO_HTTPONLY = 30;
@@ -20,9 +18,21 @@ const CAP_GLOBAL_DEDUCTION = 68;
 
 const SCORE_MIN = 32;
 
-const SESSION_NAME_PATTERN = /^(session(id)?|sid|jsessionid|phpsessid|asp\.net_sessionid|connect\.sid)$/i;
-const TOKEN_NAME_PATTERN = /^(auth|token|access_token|refresh_token|jwt|login|csrf|xsrf)$/i;
-const TOKEN_NAME_SUBSTRING = /(auth|token|session|jwt)/i;
+const COMPOUND_SESSION_ID_PATTERN = /^session[-_.]/i;
+const ANALYTICS_PREFIX_PATTERN = /^(_ga|_gid|_gat|_fbp|_gcl_|_uet|_hj)/i;
+const MARKETING_ID_PREFIX_PATTERN = /^(visitor|visid|tracking|track|anon|anonymous)[-_]/i;
+
+const CSRF_EXACT_NAMES = new Set([
+    'csrf',
+    'xsrf',
+    'csrftoken',
+    'xsrf-token',
+    'csrf_token',
+    'x-csrftoken',
+]);
+
+const SESSION_NAME_PATTERN = /^(session(id)?|jsessionid|phpsessid|asp\.net_sessionid|connect\.sid)$/i;
+const TOKEN_NAME_PATTERN = /^(auth|token|access_token|refresh_token|jwt|login|id_token|bearer)$/i;
 
 export type CookieSecurityFindingId =
     | 'missing_secure_httponly_cookie'
@@ -46,14 +56,6 @@ export interface CookieSecurityFinding {
 export interface CookieSecurityScoreResult {
     score: number | null;
     findings: CookieSecurityFinding[];
-    version: string;
-}
-
-type AuthConfidence = 'high' | 'medium' | 'low';
-
-interface AuthClassification {
-    inScope: boolean;
-    confidence: AuthConfidence;
 }
 
 interface ScoredFindingDraft {
@@ -65,34 +67,34 @@ interface ScoredFindingDraft {
     severity: CookieSecuritySeverity;
 }
 
-function isAuthSessionCookie(cookie: chrome.cookies.Cookie): AuthClassification {
-    const name = cookie.name.toLowerCase();
-
-    if (cookie.session) {
-        return { inScope: true, confidence: 'high' };
-    }
-
-    if (SESSION_NAME_PATTERN.test(name)) {
-        return { inScope: true, confidence: cookie.httpOnly || cookie.secure ? 'high' : 'medium' };
-    }
-
-    const tokenLikeName = TOKEN_NAME_PATTERN.test(name)
-        || (TOKEN_NAME_SUBSTRING.test(name) && name.length <= 48);
-
-    if (tokenLikeName && (cookie.httpOnly || cookie.secure || cookie.session)) {
-        return { inScope: true, confidence: 'medium' };
-    }
-
-    if (TOKEN_NAME_PATTERN.test(name) || SESSION_NAME_PATTERN.test(name)) {
-        return { inScope: false, confidence: 'low' };
-    }
-
-    return { inScope: false, confidence: 'low' };
+function isExcludedNonAuthCookie(nameLower: string): boolean {
+    if (COMPOUND_SESSION_ID_PATTERN.test(nameLower)) return true;
+    if (ANALYTICS_PREFIX_PATTERN.test(nameLower)) return true;
+    if (MARKETING_ID_PREFIX_PATTERN.test(nameLower)) return true;
+    if (CSRF_EXACT_NAMES.has(nameLower)) return true;
+    return false;
 }
 
-function authInScope(classification: AuthClassification): boolean {
-    return classification.inScope
-        && (classification.confidence === 'high' || classification.confidence === 'medium');
+function isAuthSessionCookie(cookie: chrome.cookies.Cookie): boolean {
+    const nameLower = cookie.name.toLowerCase();
+
+    if (isExcludedNonAuthCookie(nameLower)) {
+        return false;
+    }
+
+    if (cookie.session) {
+        return true;
+    }
+
+    if (SESSION_NAME_PATTERN.test(nameLower)) {
+        return true;
+    }
+
+    if (TOKEN_NAME_PATTERN.test(nameLower)) {
+        return true;
+    }
+
+    return false;
 }
 
 function cookieLifetimeDays(cookie: chrome.cookies.Cookie): number | null {
@@ -110,8 +112,7 @@ function repeatMultiplier(instanceIndex: number): number {
 
 function evaluateCookie(cookie: chrome.cookies.Cookie): ScoredFindingDraft[] {
     const findings: ScoredFindingDraft[] = [];
-    const auth = isAuthSessionCookie(cookie);
-    const authScoped = authInScope(auth);
+    const authScoped = isAuthSessionCookie(cookie);
 
     if (authScoped && !cookie.httpOnly) {
         findings.push({
@@ -119,7 +120,7 @@ function evaluateCookie(cookie: chrome.cookies.Cookie): ScoredFindingDraft[] {
             track: 2,
             cookie,
             baseDeduction: BASE_2A_AUTH_NO_HTTPONLY,
-            message: 'Likely authentication or session cookie is accessible to JavaScript (missing HttpOnly).',
+            message: 'Authentication or session cookie is accessible to JavaScript (missing HttpOnly).',
             severity: 'critical',
         });
     } else if (cookie.httpOnly) {
@@ -230,7 +231,7 @@ function capFindings(findings: CookieSecurityFinding[]): {
 
 export function computeCookieSecurityScore(site: CookieSite): CookieSecurityScoreResult {
     if (site.cookies.length === 0) {
-        return { score: null, findings: [], version: COOKIE_SECURITY_SCORE_VERSION };
+        return { score: null, findings: [] };
     }
 
     const drafts = site.cookies.flatMap(evaluateCookie);
@@ -243,7 +244,6 @@ export function computeCookieSecurityScore(site: CookieSite): CookieSecurityScor
     return {
         score,
         findings,
-        version: COOKIE_SECURITY_SCORE_VERSION,
     };
 }
 
