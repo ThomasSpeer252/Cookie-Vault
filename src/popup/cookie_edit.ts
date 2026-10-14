@@ -184,7 +184,7 @@ function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInpu
 
     if (!input.session) {
         if (input.expirationDate === undefined || isNaN(input.expirationDate)) {
-            return "Enter a expiration date and time, or check the 'Session' flag.";
+            return "Enter an expiration date and time, or check the 'Session' flag.";
         }
         const nowSec = Math.floor(Date.now() / 1000);
         if (input.expirationDate <= nowSec) {
