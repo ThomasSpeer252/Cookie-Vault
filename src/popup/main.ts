@@ -28,6 +28,7 @@ async function loadSites(): Promise<CookieSite[]> {
 async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle): Promise<void> {
     try {
         sites = await loadSites();
+        void renderSiteList();  // re-render site list, ensures most up-to-date version of list if a user clicks 'unvault all'
     } catch (error) {
         if (overlay) throw error;
         loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
@@ -345,7 +346,7 @@ function bindHomeEventListeners() {
     document.getElementById('filter-unvaulted')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-safe')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-flagged')?.addEventListener('change', renderSiteList);
-    document.getElementById('settings-btn')?.addEventListener('click', renderSettings);
+    document.getElementById('settings-btn')?.addEventListener('click', () => void renderSettings(loadCookies));
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
