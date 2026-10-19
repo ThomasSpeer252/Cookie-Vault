@@ -54,21 +54,18 @@
   <main class="vault-body">
     <!-- Filter buttons -->
     <div class="filter-controls">
-      <label class="filter-chip">
-        <input type="checkbox" id="filter-vaulted" checked />
-        <span>Vaulted</span>
       </label>
       <label class="filter-chip">
-        <input type="checkbox" id="filter-unvaulted" checked />
-        <span>Unvaulted</span>
+        <input type="radio" name="status-filter" id="filter-unflagged" />
+        <span>Unflagged</span>
       </label>
       <label class="filter-chip">
-        <input type="checkbox" id="filter-safe" checked />
-        <span>Safe</span>
-      </label>
-      <label class="filter-chip">
-        <input type="checkbox" id="filter-flagged" checked />
+        <input type="radio" name="status-filter" id="filter-flagged" />
         <span>Flagged</span>
+      </label>
+      <label class="filter-chip">
+        <input type="radio"  name="status-filter" id="filter-both" checked />
+        <span>Both</span>
       </label>
     </div>
 
