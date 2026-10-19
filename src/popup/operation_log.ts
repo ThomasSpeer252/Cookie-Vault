@@ -1,7 +1,7 @@
 import { CookieDatabase, LogEntry, LogOperation } from '@/db/CookieDatabase';
 import { openOverlay } from './overlay';
 
-export type OperationType = 'VAULT' | 'VAULT_ALL' | 'UNVAULT' | 'UNVAULT_ALL' | 'BLOCK' | 'WARN' | 'DELETE'
+export type OperationType = 'VAULT' | 'UNVAULT' | 'UNVAULT_ALL' | 'BLOCK' | 'WARN' | 'DELETE'
 
 const ALL_SITES = 'all sites';
 
@@ -21,7 +21,6 @@ function cleanUrl(url: string): string {
 
 const OP_TYPES: Record<OperationType, string> = {
   VAULT: 'vault',
-  VAULT_ALL: 'vault-all',
   UNVAULT: 'unvault',
   UNVAULT_ALL: 'unvault-all',
   BLOCK: 'block',
@@ -31,7 +30,6 @@ const OP_TYPES: Record<OperationType, string> = {
 
 const TO_DB_OP: Record<OperationType, LogOperation> = {
   VAULT: 'vault',
-  VAULT_ALL: 'vault',
   UNVAULT: 'unvault',
   UNVAULT_ALL: 'unvault',
   BLOCK: 'block',
@@ -42,7 +40,7 @@ const TO_DB_OP: Record<OperationType, LogOperation> = {
 function fromDb(entry: LogEntry): OperationEntry {
   const all_sites = entry.domain === ALL_SITES;
   const ops: Record<LogOperation, OperationType> = {
-    vault: all_sites? 'VAULT_ALL' : 'VAULT',
+    vault: 'VAULT',
     unvault: all_sites? 'UNVAULT_ALL' : 'UNVAULT',
     block: 'BLOCK',
     warn: 'WARN',
