@@ -9,7 +9,6 @@ import { applyTheme } from './theme';
 import { deleteSpecificCookie } from './cookie_actions';
 import { recordOperation } from "./operation_log";
 
-
 let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
@@ -73,10 +72,8 @@ async function renderSiteList() {
     }
 
     const searchInput = document.getElementById('site-search') as HTMLInputElement;
-    const vaultCheck = document.getElementById('filter-vaulted') as HTMLInputElement;
-    const unvaultCheck = document.getElementById('filter-unvaulted') as HTMLInputElement;
-    const statusSafe = document.getElementById('filter-safe') as HTMLInputElement;
-    const statusFlagged = document.getElementById('filter-flagged') as HTMLInputElement;
+    const filterUnflagged = document.getElementById('filter-unflagged') as HTMLInputElement;
+    const filterFlagged = document.getElementById('filter-flagged') as HTMLInputElement;
 
 
     if (isLoading) {
@@ -85,18 +82,29 @@ async function renderSiteList() {
     }
 
     const filterText = searchInput?.value.toLowerCase() || '';
-    const showVaulted = vaultCheck?.checked ?? true;
-    const showUnvaulted = unvaultCheck?.checked ?? true;
-    const showSafe = statusSafe?.checked ?? true;
-    const showFlagged = statusFlagged.checked ?? true;
+    const isUnflagged = filterUnflagged?.checked ?? true;
+    const isFlagged = filterFlagged.checked ?? true;
 
     const filteredSites = sites.filter(site => {
         const matchesText = site.domain.toLowerCase().includes(filterText);
-        const matchesCategory = (showVaulted && site.cookies.some(cookie => cookie.isVaulted))
-            || (showUnvaulted && site.cookies.some(cookie => !cookie.isVaulted));
-        const matchesStatus = (site.allSecure && showSafe) || (!site.allSecure && showFlagged);
-        return matchesText && matchesCategory && matchesStatus;
-    }).sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
+        let matchesFilter = true;
+        if (isUnflagged) {
+            matchesFilter = site.allSecure;
+        } else if (isFlagged) {
+            matchesFilter = !site.allSecure;
+        }
+        return matchesText && matchesFilter
+    }).sort((a, b) => {
+        if (a.isPinned !== b.isPinned) {
+            return Number(b.isPinned) - Number(a.isPinned);
+        }
+        const aVaulted = a.cookies.some(cookie => cookie.isVaulted);
+        const bVaulted = b.cookies.some(cookie => cookie.isVaulted);
+        if (aVaulted !== bVaulted) {
+            return Number(bVaulted) - Number(aVaulted);
+        }
+        return 0;
+    });
 
     if (filteredSites.length === 0) {
         container.innerHTML = `<p class="list-state">${sites.length === 0
@@ -345,10 +353,9 @@ export async function updateSiteCard(domain: string): Promise<void> {
 
 function bindHomeEventListeners() {
     document.getElementById('site-search')?.addEventListener('input', renderSiteList);
-    document.getElementById('filter-vaulted')?.addEventListener('change', renderSiteList);
-    document.getElementById('filter-unvaulted')?.addEventListener('change', renderSiteList);
-    document.getElementById('filter-safe')?.addEventListener('change', renderSiteList);
+    document.getElementById('filter-unflagged')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-flagged')?.addEventListener('change', renderSiteList);
+    document.getElementById('filter-both')?.addEventListener('change', renderSiteList);
     document.getElementById('settings-btn')?.addEventListener('click', () => void renderSettings(loadCookies));
 }
 
