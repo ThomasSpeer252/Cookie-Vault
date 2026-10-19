@@ -63,12 +63,13 @@ export async function updateCookie(
         url: cookieUrl(cookie),
         name: cookie.name,
         value: input.value,
-        domain: cookie.domain,
+        ...(cookie.hostOnly ? {} : { domain: cookie.domain }),
         path: cookie.path,
         secure: input.secure,
         httpOnly: input.httpOnly,
         sameSite: input.sameSite,
         storeId: cookie.storeId,
+        ...(cookie.partitionKey ? { partitionKey: cookie.partitionKey } : {}),
     };
 
     if (!input.session && input.expirationDate !== undefined) {

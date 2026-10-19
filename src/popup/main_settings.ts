@@ -1,6 +1,6 @@
 import { openOverlay } from './overlay';
 import { applyTheme } from './theme';
-import { renderLog } from './operation_log';
+import { recordOperation, renderLog } from './operation_log';
 import { CookieDatabase } from '../db/CookieDatabase';
 import { fromVaultCookie, type SiteCookie } from './cookie_data';
 import { moveCookie } from './site_settings';
@@ -88,7 +88,6 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
           </label>
         </div>
 
-        <!-- TODO: Operation log should open a new page on the extension and show a read-only log of cookie usage -->
         <div class="settings-row">
           <div class="settings-info">
               <span class="settings-label">Operation Log</span>
@@ -123,7 +122,7 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
 
   // All other elements
   overlay.element.querySelector('.op-log')?.addEventListener('click', renderLog);
-
+  
   const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
   closeButton?.addEventListener('click', overlay.close);
   closeButton?.focus();
@@ -148,6 +147,7 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
         return;
     } finally {
       unvaultAllButton.disabled = false;
+      recordOperation("UNVAULT_ALL", "All cookies unvaulted")
     }
   });
 }
