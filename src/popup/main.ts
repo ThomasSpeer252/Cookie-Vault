@@ -233,7 +233,8 @@ function renderPermissionPrompt() {
         <div class="permission-prompt">
             <p class="list-state">Cookie access permissions are required for the extension.</p>
             <button type="button" id="grant-cookies-btn" class="grant-cookie-btn">
-                Click Here to Grant Cookie Access
+                Click to Grant<br>
+                Site-List & Cookie Access
             </button>
         </div>
     `;
