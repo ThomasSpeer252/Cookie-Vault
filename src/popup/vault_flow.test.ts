@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import 'fake-indexeddb/auto';
 import { CookieDatabase } from '../db/CookieDatabase';
-import { getCookieSites } from './cookie_data';
+import { getCookieSites, vaultCookieId } from './cookie_data';
+import { updateCookie } from './cookie_actions';
 import { moveCookie } from './site_settings';
 
 const browserCookie: chrome.cookies.Cookie = {
@@ -25,7 +26,7 @@ const db = CookieDatabase.getInstance();
 
 describe('popup cookie vault flow', () => {
     beforeEach(async () => {
-        vi.stubGlobal('chrome', { cookies: { getAll, remove, set } });
+        vi.stubGlobal('chrome', { cookies: { getAll, remove, set }, runtime: {} });
         getAll.mockResolvedValue([browserCookie]);
         remove.mockResolvedValue({});
         set.mockResolvedValue(browserCookie);
@@ -74,6 +75,66 @@ describe('popup cookie vault flow', () => {
 
         await expect(moveCookie(cookie)).rejects.toThrow('Removal failed');
         expect(db.getAllCookies()).toHaveLength(0);
+    });
+
+    it('groups dotted and dotless cookies together without changing their domains or vault identities', async () => {
+        const domainCookie = { ...browserCookie, domain: '.example.com', hostOnly: false };
+        getAll.mockResolvedValue([browserCookie, domainCookie]);
+
+        const sites = await getCookieSites();
+        expect(sites).toHaveLength(1);
+        expect(sites[0].domain).toBe('example.com');
+        expect(sites[0].cookies.map(cookie => cookie.domain)).toEqual(['example.com', '.example.com']);
+        expect(new Set(sites[0].cookies.map(cookie => cookie.vaultId)).size).toBe(2);
+        expect(domainCookie.domain).toBe('.example.com');
+
+        await moveCookie(sites[0].cookies[1]);
+        expect(await db.getCookiesByDomain('.example.com')).toEqual([
+            expect.objectContaining({ domain: '.example.com', hostOnly: false, id: vaultCookieId(domainCookie) }),
+        ]);
+        expect(await db.getCookiesByDomain('example.com')).toEqual([]);
+
+        getAll.mockResolvedValue([browserCookie]);
+        const [mixedSite] = await getCookieSites();
+        expect(mixedSite.domain).toBe('example.com');
+        expect(mixedSite.cookies).toHaveLength(2);
+        const vaulted = mixedSite.cookies.find(cookie => cookie.isVaulted)!;
+        expect(vaulted.domain).toBe('.example.com');
+
+        await moveCookie(vaulted);
+        expect(set).toHaveBeenCalledWith(expect.objectContaining({
+            url: 'https://example.com/',
+            domain: '.example.com',
+            partitionKey: domainCookie.partitionKey,
+        }));
+        expect(db.getAllCookies()).toHaveLength(0);
+    });
+
+    it.each([
+        { domain: 'example.com', hostOnly: true },
+        { domain: '.example.com', hostOnly: false },
+    ])('preserves cookie scope when editing $domain', async ({ domain, hostOnly }) => {
+        const original = { ...browserCookie, domain, hostOnly };
+        getAll.mockResolvedValue([original]);
+        const cookie = (await getCookieSites())[0].cookies[0];
+        const edited = { ...original, value: 'updated' };
+        set.mockImplementationOnce((_details, callback) => callback(edited));
+
+        await expect(updateCookie(cookie, {
+            value: 'updated', secure: true, httpOnly: true, sameSite: 'lax', session: true,
+        })).resolves.toEqual(edited);
+
+        const details = set.mock.calls[0][0];
+        expect(details).toMatchObject({
+            url: 'https://example.com/', name: original.name, value: 'updated',
+            path: original.path, storeId: original.storeId, partitionKey: original.partitionKey,
+        });
+        if (hostOnly) {
+            expect(details).not.toHaveProperty('domain');
+        } else {
+            expect(details.domain).toBe('.example.com');
+        }
+        expect(cookie.domain).toBe(domain);
     });
 
     it('keeps a vaulted cookie if Chrome cannot restore it', async () => {
