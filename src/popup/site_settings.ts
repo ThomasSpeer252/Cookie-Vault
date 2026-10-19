@@ -4,6 +4,7 @@ import { CookieDatabase } from '../db/CookieDatabase';
 import { openCookieEdit } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
 import { openOverlay, type OverlayHandle } from './overlay';
+import { recordOperation } from "./operation_log";
 
 const PLACEHOLDER_SECURITY = 'No Concerns Found';
 const PLACEHOLDER_SAFETY_SCORE = 94;
@@ -12,6 +13,7 @@ export async function moveCookie(cookie: SiteCookie): Promise<void> {
     const db = CookieDatabase.getInstance();
     if (cookie.isVaulted) {
         await restoreBrowserCookie(cookie);
+        await recordOperation("UNVAULT", `${cookie.name} unvaulted`, cookie.domain);
         try {
             await db.deleteCookie(cookie.vaultId, cookie.domain);
         } catch (error) {
@@ -24,6 +26,7 @@ export async function moveCookie(cookie: SiteCookie): Promise<void> {
         } catch {}
 
         await db.upsertCookie(toVaultCookie(cookie));
+        await recordOperation("VAULT", `${cookie.name} vaulted`, cookie.domain);
         try {
             await removeBrowserCookie(cookie);
         } catch (error) {
@@ -191,6 +194,8 @@ export function renderSiteDetails(
             if (button.dataset.action === 'delete-cookie') {
                 await deleteSpecificCookie(cookie);
                 //await renderSelf();
+                await recordOperation("DELETE", `${cookie.name} deleted`, cookie.domain);
+                
             } else {
                 await moveCookie(cookie);
             }

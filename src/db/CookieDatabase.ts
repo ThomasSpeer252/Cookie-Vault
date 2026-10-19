@@ -1,5 +1,5 @@
 const DB_NAME = 'CookieVaultDB'
-const DB_VERSION = 2
+const DB_VERSION = 4
 
 export interface Cookie {
   // Unique ID (Chrome uses a combo of name, domain, path, and partitionKey)
@@ -34,13 +34,13 @@ export interface VaultState {
   totalCookiesBlocked: number
 }
 
-export type LogOperation = 'vault' | 'unvault' | 'block' | 'warn' | 'delete';
+export type OperationType = 'VAULT' | 'UNVAULT' | 'UNVAULT_ALL' | 'BLOCK' | 'WARN' | 'DELETE';
 
 export interface LogEntry {
   id?: number
   domain: string
   timestamp: number // Unix timestamp
-  op: LogOperation
+  op: OperationType
   detail: string
 }
 
@@ -145,6 +145,30 @@ export class CookieDatabase {
 
           logStore.createIndex('timestamp', 'timestamp', { unique: false }); // Useful for sorting logs by time
           logStore.createIndex('domain', 'domain', { unique: false }); // Useful for filtering by domain.
+        }
+        if (event.oldVersion < 4) {
+          const legacyOperations: Record<string, OperationType> = {
+            vault: 'VAULT',
+            unvault: 'UNVAULT',
+            block: 'BLOCK',
+            warn: 'WARN',
+            delete: 'DELETE',
+          };
+          const requestCursor = request.transaction!.objectStore('operationLogs').openCursor();
+          requestCursor.onsuccess = () => {
+            const cursor = requestCursor.result;
+            if (!cursor) return;
+
+            const entry = cursor.value;
+            const operation = legacyOperations[entry.op];
+            if (operation) {
+              entry.op = entry.op === 'unvault' && entry.domain === 'all sites'
+                ? 'UNVAULT_ALL'
+                : operation;
+              cursor.update(entry);
+            }
+            cursor.continue();
+          };
         }
       };
     });
