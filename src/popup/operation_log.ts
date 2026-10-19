@@ -1,7 +1,5 @@
-import { CookieDatabase, LogEntry, LogOperation } from '@/db/CookieDatabase';
+import { CookieDatabase, LogEntry, OperationType } from '@/db/CookieDatabase';
 import { openOverlay } from './overlay';
-
-export type OperationType = 'VAULT' | 'UNVAULT' | 'UNVAULT_ALL' | 'BLOCK' | 'WARN' | 'DELETE'
 
 const ALL_SITES = 'all sites';
 
@@ -28,26 +26,8 @@ const OP_TYPES: Record<OperationType, string> = {
   DELETE: 'delete'
 }
 
-const TO_DB_OP: Record<OperationType, LogOperation> = {
-  VAULT: 'vault',
-  UNVAULT: 'unvault',
-  UNVAULT_ALL: 'unvault',
-  BLOCK: 'block',
-  WARN: 'warn',
-  DELETE: 'delete'
-}
-
 function fromDb(entry: LogEntry): OperationEntry {
-  const all_sites = entry.domain === ALL_SITES;
-  const ops: Record<LogOperation, OperationType> = {
-    vault: 'VAULT',
-    unvault: all_sites? 'UNVAULT_ALL' : 'UNVAULT',
-    block: 'BLOCK',
-    warn: 'WARN',
-    delete: 'DELETE'
-  };
-
-  return { timestamp: entry.timestamp, op: ops[entry.op], type: entry.detail, site: entry.domain };
+  return { timestamp: entry.timestamp, op: entry.op, type: entry.detail, site: entry.domain };
 }
 
 export async function getOperations() {
@@ -60,7 +40,7 @@ export async function recordOperation(op: OperationType, detail: string, site: s
     await CookieDatabase.getInstance().addLogEntry({
       domain: op.endsWith('_ALL') ? ALL_SITES : cleanUrl(site),
       timestamp: Date.now(),
-      op: TO_DB_OP[op],
+      op,
       detail: detail
     });
   } catch (error) {
