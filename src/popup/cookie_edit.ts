@@ -132,6 +132,13 @@ export function openCookieEdit(
             input.secure = true;
         }
 
+        const err = getValidationError(cookie, input);
+        if (err) {
+            errorEl.hidden = false;
+            errorEl.textContent = err;
+            return;
+        }
+
         try {
             await updateCookie(cookie, input);
             close();
@@ -145,4 +152,44 @@ export function openCookieEdit(
     });
 
     overlay.element.querySelector<HTMLButtonElement>('[data-action="close-edit"]')?.focus();
+}
+
+function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInput): string | null {
+    const name = cookie.name || '';
+    const path = cookie.path || '/';
+
+    if (!name.trim()) {
+        return "Cookie name cannot be empty.";
+    }
+    if (/[\r\n;,]/.test(input.value)) {
+        return "Cookie value contains invalid characters.";
+    }
+
+    if (name.startsWith('__Host-')) {
+        if (!input.secure) {
+            return "Cookies prefixed with '__Host-' must have the Secure flag enabled.";
+        }
+        if (path !== '/') {
+            return "Cookies prefixed with '__Host-' must have a Path set strictly to '/'.";
+        }
+    }
+
+    if (name.startsWith('__Secure-') && !input.secure) {
+        return "Cookies prefixed with '__Secure-' must have the Secure flag enabled.";
+    }
+
+    if (input.sameSite === 'no_restriction' && !input.secure) {
+        return "Cookies with 'SameSite=None' must also have the 'Secure' attribute checked.";
+    }
+
+    if (!input.session) {
+        if (input.expirationDate === undefined || isNaN(input.expirationDate)) {
+            return "Enter an expiration date and time, or check the 'Session' flag.";
+        }
+        const nowSec = Math.floor(Date.now() / 1000);
+        if (input.expirationDate <= nowSec) {
+            return "Set Expiration date has passed.";
+        }
+    }
+    return null;
 }
