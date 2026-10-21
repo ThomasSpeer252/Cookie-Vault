@@ -1,5 +1,11 @@
 import { openOverlay } from './overlay';
 import { applyTheme } from './theme';
+import { recordOperation, renderLog } from './operation_log';
+import { CookieDatabase } from '../db/CookieDatabase';
+import { fromVaultCookie, type SiteCookie } from './cookie_data';
+import { moveCookie } from './site_settings';
+
+let unvaultError: string | null = null;
 
 const DEFAULT_SETTINGS: Settings = {
   autoDel: false,
@@ -24,8 +30,7 @@ async function saveSettings(settings: Settings) {
   chrome.storage.sync.set(settings)
 }
 
-// TODO Connect storage and render
-export async function renderSettings() {
+export async function renderSettings(onVaultChanged: () => void | Promise<void>) {
   const settings = await getSettings();
 
   const overlay = openOverlay(`
@@ -83,16 +88,15 @@ export async function renderSettings() {
           </label>
         </div>
 
-        <!-- TODO: Operation log should open a new page on the extension and show a read-only log of cookie usage -->
         <div class="settings-row">
           <div class="settings-info">
               <span class="settings-label">Operation Log</span>
               <span class="settings-minor">Activity history and alerts</span>
           </div>
-          <button class="settings-view-btn">☱ View</button>
+          <button class="settings-view-btn op-log">☱ View</button>
         </div>
 
-        <button class="unvault-all-btn">Unvault Everything </button>
+        <button class="unvault-all-btn" data-action="unvault-all">Unvault Everything </button>
 
       </div>
     </section>
@@ -101,28 +105,49 @@ export async function renderSettings() {
 
   if (!overlay) return;
 
+  // User settings
   overlay.element.querySelectorAll<HTMLInputElement>('input[data-key]').forEach(checkbox => {
     const key = checkbox.dataset.key as keyof Settings;
-    
     checkbox.checked = Boolean(settings[key]);
-    checkbox.addEventListener('change', () => {
-      settings[key] = checkbox.checked;
-      saveSettings(settings);
-    });
     
     checkbox.addEventListener('change', async () => {
       settings[key] = checkbox.checked;
       await saveSettings(settings);
       
       if (key === 'darkMode') {
-        // console.log('Checked');
         applyTheme(checkbox.checked);
-     };
-   });
+      }
+    });
   });
-  
 
+  // All other elements
+  overlay.element.querySelector('.op-log')?.addEventListener('click', renderLog);
+  
   const closeButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="close-settings"]');
   closeButton?.addEventListener('click', overlay.close);
   closeButton?.focus();
+
+  const unvaultAllButton = overlay.element.querySelector<HTMLButtonElement>('[data-action="unvault-all"]');
+
+  unvaultAllButton?.addEventListener('click', async () => {
+  unvaultAllButton.disabled = true;
+
+    try {
+      const vaulted: SiteCookie[] = CookieDatabase.getInstance().getAllCookies().map(fromVaultCookie);
+
+      for (const cookie of vaulted) {
+        await moveCookie(cookie);
+      }
+
+      // refresh sitelist to reflect database, runs loadCookies() under the hood
+      await onVaultChanged();
+    } catch (error) {
+        if (overlay) throw error;
+        unvaultError = error instanceof Error ? error.message : 'Unable to unvault everything.';
+        return;
+    } finally {
+      unvaultAllButton.disabled = false;
+      recordOperation("UNVAULT_ALL", "All cookies unvaulted")
+    }
+  });
 }

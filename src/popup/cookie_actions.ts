@@ -1,3 +1,6 @@
+import { CookieDatabase } from "../db/CookieDatabase.ts";
+import type { SiteCookie } from "./cookie_data.ts";
+
 export function cookieUrl(cookie: chrome.cookies.Cookie): string {
     const host = cookie.domain.replace(/^\./, '');
     const scheme = cookie.secure ? 'https' : 'http';
@@ -60,12 +63,13 @@ export async function updateCookie(
         url: cookieUrl(cookie),
         name: cookie.name,
         value: input.value,
-        domain: cookie.domain,
+        ...(cookie.hostOnly ? {} : { domain: cookie.domain }),
         path: cookie.path,
         secure: input.secure,
         httpOnly: input.httpOnly,
         sameSite: input.sameSite,
         storeId: cookie.storeId,
+        ...(cookie.partitionKey ? { partitionKey: cookie.partitionKey } : {}),
     };
 
     if (!input.session && input.expirationDate !== undefined) {
@@ -73,6 +77,27 @@ export async function updateCookie(
     }
 
     return promisify((cb) => chrome.cookies.set(details, cb));
+}
+
+export async function deleteSpecificCookie(cookie: SiteCookie): Promise<void> {
+    const db = CookieDatabase.getInstance();
+
+    if (cookie.isVaulted) {
+        await db.deleteCookie(cookie.vaultId, cookie.domain);
+        return;
+    }
+
+    await removeBrowserCookie(cookie);
+
+    try {
+        const domainCookies = await db.getCookiesByDomain(cookie.domain);
+        const dbRecord = domainCookies.find(
+            (item) => item.name === cookie.name && item.path === cookie.path
+        )
+        if (dbRecord) {
+            await db.deleteCookie(dbRecord.id, cookie.domain);
+        }
+    } catch {}
 }
 
 export function findCookieInSite(
