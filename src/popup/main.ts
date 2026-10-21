@@ -48,6 +48,7 @@ async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle)
         site,
         async () => {
             await updateSiteCard(domain);
+            await renderSiteList();
         },
         overlay,
     );
