@@ -31,6 +31,15 @@ const CSRF_EXACT_NAMES = new Set([
     'x-csrftoken',
 ]);
 
+const INFRASTRUCTURE_COOKIE_NAMES = new Set([
+    'ipv6',
+    '_ss',
+    'ak_bmsc',
+    'bm_sz',
+]);
+
+const INFRASTRUCTURE_COOKIE_PATTERN = /^_edge/i;
+
 const SESSION_NAME_PATTERN = /^(session(id)?|jsessionid|phpsessid|asp\.net_sessionid|connect\.sid)$/i;
 const TOKEN_NAME_PATTERN = /^(auth|token|access_token|refresh_token|jwt|login|id_token|bearer)$/i;
 
@@ -67,7 +76,14 @@ interface ScoredFindingDraft {
     severity: CookieSecuritySeverity;
 }
 
+function isInfrastructureCookie(nameLower: string): boolean {
+    if (INFRASTRUCTURE_COOKIE_NAMES.has(nameLower)) return true;
+    if (INFRASTRUCTURE_COOKIE_PATTERN.test(nameLower)) return true;
+    return false;
+}
+
 function isExcludedNonAuthCookie(nameLower: string): boolean {
+    if (isInfrastructureCookie(nameLower)) return true;
     if (COMPOUND_SESSION_ID_PATTERN.test(nameLower)) return true;
     if (ANALYTICS_PREFIX_PATTERN.test(nameLower)) return true;
     if (MARKETING_ID_PREFIX_PATTERN.test(nameLower)) return true;
@@ -80,10 +96,6 @@ function isAuthSessionCookie(cookie: chrome.cookies.Cookie): boolean {
 
     if (isExcludedNonAuthCookie(nameLower)) {
         return false;
-    }
-
-    if (cookie.session) {
-        return true;
     }
 
     if (SESSION_NAME_PATTERN.test(nameLower)) {
@@ -111,6 +123,11 @@ function repeatMultiplier(instanceIndex: number): number {
 }
 
 function evaluateCookie(cookie: chrome.cookies.Cookie): ScoredFindingDraft[] {
+    const nameLower = cookie.name.toLowerCase();
+    if (isInfrastructureCookie(nameLower)) {
+        return [];
+    }
+
     const findings: ScoredFindingDraft[] = [];
     const authScoped = isAuthSessionCookie(cookie);
 
