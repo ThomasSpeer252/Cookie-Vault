@@ -231,6 +231,56 @@ describe('CookieDatabase', () => {
   });
 
   describe('Operation Log Operations', () => {
+    it('should migrate version 3 logs while preserving their data and all-sites operations', async () => {
+      await db.close();
+      await db.init(dbName, 3);
+      await db.upsertCookie(mockCookie);
+      await db.upsertSiteProfile(mockSiteProfile);
+      await db.close();
+
+      const legacyEntries = ['vault', 'unvault', 'block', 'warn', 'delete', 'unvault'].map((op, index) => ({
+        id: index + 1,
+        domain: index === 5 ? 'all sites' : 'example.com',
+        timestamp: 1000 + index,
+        op,
+        detail: `Legacy operation ${index}`,
+      }));
+
+      await new Promise<void>((resolve, reject) => {
+        const request = indexedDB.open(dbName, 3);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          const legacyDb = request.result;
+          const transaction = legacyDb.transaction('operationLogs', 'readwrite');
+          for (const entry of legacyEntries) {
+            transaction.objectStore('operationLogs').add(entry);
+          }
+          transaction.oncomplete = () => {
+            legacyDb.close();
+            resolve();
+          };
+          transaction.onerror = () => {
+            legacyDb.close();
+            reject(transaction.error);
+          };
+        };
+      });
+
+      await db.init(dbName);
+
+      const operations = ['VAULT', 'UNVAULT', 'BLOCK', 'WARN', 'DELETE', 'UNVAULT_ALL'];
+      await expect(db.getLogEntries()).resolves.toEqual(
+        legacyEntries.map((entry, index) => ({ ...entry, op: operations[index] })).reverse(),
+      );
+      expect(db.getCookieByIdSync(mockCookie.id)).toEqual(mockCookie);
+      await expect(db.getSiteProfile(mockSiteProfile.domain)).resolves.toEqual(mockSiteProfile);
+
+      await db.addLogEntry({ domain: 'all sites', timestamp: 2000, op: 'UNVAULT_ALL', detail: 'All cookies unvaulted' });
+      await db.close();
+      await db.init(dbName);
+      expect((await db.getLogEntries())[0].op).toBe('UNVAULT_ALL');
+    });
+
     it('should return an empty array when there are no log entries', async () => {
       await expect(db.getLogEntries()).resolves.toEqual([]);
     });
@@ -239,7 +289,7 @@ describe('CookieDatabase', () => {
       await db.addLogEntry({
         domain: 'example.com',
         timestamp: 1000,
-        op: 'vault',
+        op: 'VAULT',
         detail: 'session_id vaulted',
       });
 
@@ -251,13 +301,13 @@ describe('CookieDatabase', () => {
       await db.addLogEntry({
         domain: 'example.com',
         timestamp: 1000,
-        op: 'vault',
+        op: 'VAULT',
         detail: 'session_id vaulted',
       });
       await db.addLogEntry({
         domain: 'example.com',
         timestamp: 1000,
-        op: 'unvault',
+        op: 'UNVAULT',
         detail: 'session_id unvaulted',
       });
 
@@ -265,26 +315,26 @@ describe('CookieDatabase', () => {
 
       expect(entries).toHaveLength(2);
       expect(entries.map(entry => entry.timestamp)).toEqual([1000, 1000]);
-      expect(entries.map(entry => entry.op)).toEqual(expect.arrayContaining(['vault', 'unvault']));
+      expect(entries.map(entry => entry.op)).toEqual(expect.arrayContaining(['VAULT', 'UNVAULT']));
     });
 
     it('should add log entries and return them newest first with the requested limit', async () => {
       await db.addLogEntry({
         domain: 'example.com',
         timestamp: 1000,
-        op: 'vault',
+        op: 'VAULT',
         detail: 'session_id vaulted',
       });
       await db.addLogEntry({
         domain: 'test.com',
         timestamp: 3000,
-        op: 'warn',
+        op: 'WARN',
         detail: 'Credential harvesting detected',
       });
       await db.addLogEntry({
         domain: 'example.com',
         timestamp: 2000,
-        op: 'unvault',
+        op: 'UNVAULT',
         detail: 'session_id unvaulted',
       });
 
@@ -292,7 +342,7 @@ describe('CookieDatabase', () => {
 
       expect(entries).toHaveLength(2);
       expect(entries.map(entry => entry.timestamp)).toEqual([3000, 2000]);
-      expect(entries.map(entry => entry.op)).toEqual(['warn', 'unvault']);
+      expect(entries.map(entry => entry.op)).toEqual(['WARN', 'UNVAULT']);
       expect(entries.every(entry => typeof entry.id === 'number')).toBe(true);
     });
 
@@ -300,7 +350,7 @@ describe('CookieDatabase', () => {
       const entry = {
         domain: 'example.com',
         timestamp: 1000,
-        op: 'delete' as const,
+        op: 'DELETE' as const,
         detail: 'session_id deleted',
       };
 
@@ -317,7 +367,7 @@ describe('CookieDatabase', () => {
       await db.addLogEntry({
         domain: 'example.com',
         timestamp: 1000,
-        op: 'vault',
+        op: 'VAULT',
         detail: 'session_id vaulted',
       });
 
@@ -369,7 +419,7 @@ describe('CookieDatabase', () => {
       await expect(db.addLogEntry({
         domain: 'example.com',
         timestamp: 1000,
-        op: 'vault',
+        op: 'VAULT',
         detail: 'session_id vaulted',
       })).rejects.toThrow('Database not initialized');
       await expect(db.getLogEntries()).rejects.toThrow('Database not initialized');

@@ -7,6 +7,7 @@ import { renderSiteDetails } from './site_settings';
 import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
 import { applyTheme } from './theme';
 import { deleteSpecificCookie } from './cookie_actions';
+import { recordOperation } from "./operation_log";
 
 let sites: CookieSite[] = [];
 let isLoading = true;
@@ -220,6 +221,7 @@ async function renderSiteList() {
             deleteButton.disabled = true;
 
             try {
+                await Promise.all(site.cookies.map(cookie => recordOperation("DELETE", `${cookie.name} deleted`, cookie.domain)));
                 await Promise.all(site.cookies.map(cookie => deleteSpecificCookie(cookie)));
                 await updateSiteCard(domain);
             } catch (error) {
@@ -227,6 +229,7 @@ async function renderSiteList() {
                 loadError = error instanceof Error ? error.message : 'Unable to delete site cookies.';
             }
         });
+
     });
 }
 
