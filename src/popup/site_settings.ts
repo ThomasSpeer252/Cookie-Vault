@@ -150,26 +150,28 @@ export function renderSiteDetails(
             <span class="mono-label">SITE PROFILE</span>
           </header>
 
-          <div class="profile-grid">
-            <div class="profile-row">
-              <span class="profile-label">Cookies</span>
-              <span class="profile-value">${site.cookies.length}</span>
+          <div class="profile-container">
+              <div class="profile-grid">
+                <div class="profile-row">
+                  <span class="profile-label">Cookies</span>
+                  <span class="profile-value">${site.cookies.length}</span>
+                </div>
+                <div class="profile-row">
+                  <span class="profile-label">Secure</span>
+                  <span class="profile-value">${secureCount} / ${site.cookies.length}</span>
+                </div>
+                <div class="profile-row">
+                  <span class="profile-label">HttpOnly</span>
+                  <span class="profile-value">${httpOnlyCount} / ${site.cookies.length}</span>
+                </div>
+                <div class="profile-row profile-row--stacked">
+                  <span class="profile-label">Cookie Security Score</span>
+                  <span class="profile-value ${scoreBadgeClass}" title="Based on HttpOnly cookie flags and authentication/session cookies only.">${scoreDisplay}</span>
+                </div>
+                <p class="cookie-security-summary">${escapeHtml(scoreSummary)}</p>
+                ${findingsHtml}
+              </div>
             </div>
-            <div class="profile-row">
-              <span class="profile-label">Secure</span>
-              <span class="profile-value">${secureCount} / ${site.cookies.length}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">HttpOnly</span>
-              <span class="profile-value">${httpOnlyCount} / ${site.cookies.length}</span>
-            </div>
-            <div class="profile-row profile-row--stacked">
-              <span class="profile-label">Cookie Security Score</span>
-              <span class="profile-value ${scoreBadgeClass}" title="Based on HttpOnly cookie flags and authentication/session cookies only.">${scoreDisplay}</span>
-            </div>
-            <p class="cookie-security-summary">${escapeHtml(scoreSummary)}</p>
-            ${findingsHtml}
-          </div>
         </section>
       </div>
     `;

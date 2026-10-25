@@ -367,6 +367,7 @@ input:checked + .slider:before {
   box-sizing: border-box;
   overflow-y: auto;
   font-family: var(--font-mono);
+  @include mixins.compact-scrollbar;
 }
 
 .detail-card {
@@ -374,12 +375,21 @@ input:checked + .slider:before {
   border: 1px solid var(--border-1);
   border-radius: 8px;
   padding: 12px;
+  box-sizing: border-box;
+  min-height: 0;
+
+  &.profile-card {
+    display: flex;
+    flex-direction: column;
+    flex:1;
+  }
 
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+    flex-shrink: 0;
 
     .header-title {
       display: flex;
@@ -638,6 +648,16 @@ input:checked + .slider:before {
 }
 
   // Site Profile styles
+  .profile-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-gutter: stable;
+    font-family: var(--font-mono);
+    @include mixins.compact-scrollbar;
+  }
+
   .profile-grid {
     display: flex;
     flex-direction: column;
