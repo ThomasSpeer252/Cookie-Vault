@@ -1,7 +1,7 @@
-import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie} from './cookie_actions';
+import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie, CookieEditInput} from './cookie_actions';
 import {toVaultCookie, type CookieSite, type SiteCookie, getCookieSites} from './cookie_data';
 import { CookieDatabase } from '../db/CookieDatabase';
-import { openCookieEdit } from './cookie_edit';
+import { openCookieEdit, getValidationError } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
 import { openOverlay, type OverlayHandle } from './overlay';
 import { recordOperation } from "./operation_log";
@@ -12,9 +12,22 @@ const PLACEHOLDER_SAFETY_SCORE = 94;
 export async function moveCookie(cookie: SiteCookie): Promise<void> {
     const db = CookieDatabase.getInstance();
     if (cookie.isVaulted) {
-        await restoreBrowserCookie(cookie);
-        await recordOperation("UNVAULT", `${cookie.name} unvaulted`, cookie.domain);
+        // reuse edit functionality, treat its values an an 'input'
+        const input: CookieEditInput = {
+            value: cookie.value,
+            secure: cookie.secure,
+            httpOnly: cookie.httpOnly,
+            sameSite: cookie.sameSite,
+            session: cookie.session || cookie.expirationDate === undefined,
+            expirationDate: cookie.expirationDate,
+        };
+        const validError = getValidationError(cookie, input)
+        if (validError) {
+            throw new Error(validError);
+        }
         try {
+            await restoreBrowserCookie(cookie);
+            await recordOperation("UNVAULT", `${cookie.name} unvaulted`, cookie.domain);
             await db.deleteCookie(cookie.vaultId, cookie.domain);
         } catch (error) {
             await removeBrowserCookie(cookie);
