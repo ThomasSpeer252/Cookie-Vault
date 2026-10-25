@@ -160,7 +160,7 @@ export function openCookieEdit(
     overlay.element.querySelector<HTMLButtonElement>('[data-action="close-edit"]')?.focus();
 }
 
-function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInput): string | null {
+export function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInput): string | null {
     const name = cookie.name || '';
     const path = cookie.path || '/';
 
