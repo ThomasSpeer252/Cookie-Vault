@@ -164,7 +164,7 @@ export function renderSiteDetails(
                   <span class="profile-label">HttpOnly</span>
                   <span class="profile-value">${httpOnlyCount} / ${site.cookies.length}</span>
                 </div>
-                <div class="profile-row profile-row--stacked">
+                <div class="profile-row">
                   <span class="profile-label">Cookie Security Score</span>
                   <span class="profile-value ${scoreBadgeClass}" title="Based on HttpOnly cookie flags and authentication/session cookies only.">${scoreDisplay}</span>
                 </div>
