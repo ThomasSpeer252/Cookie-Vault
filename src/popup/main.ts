@@ -1,6 +1,7 @@
 import './style.scss';
 import { getCookieSites, type CookieSite } from './cookie_data';
 import { escapeHtml } from './cookie_format';
+import { computeCookieSecurityScore, getCookieSecurityScoreLabel } from './cookie_security_score';
 import { getSettings, renderSettings } from './main_settings';
 import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
@@ -12,6 +13,19 @@ import { recordOperation } from "./operation_log";
 let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
+
+function getSiteSecurityStatus(site: CookieSite) {
+    const { score } = computeCookieSecurityScore(site);
+    const variant = score === null ? 'empty'
+        : score >= 90 ? 'safe'
+        : score >= 75 ? 'yellow'
+        : score >= 60 ? 'orange'
+        : 'unsafe';
+    return {
+        className: `status-dot status-dot--${variant}`,
+        title: `Cookie security score: ${score === null ? 'N/A' : `${score}/100`}. ${getCookieSecurityScoreLabel(score)}`,
+    };
+}
 
 async function loadSites(): Promise<CookieSite[]> {
     const [cookieSites, profiles] = await Promise.all([
@@ -88,11 +102,13 @@ async function renderSiteList() {
 
     const filteredSites = sites.filter(site => {
         const matchesText = site.domain.toLowerCase().includes(filterText);
+        const { score } = computeCookieSecurityScore(site);
+        const unflagged = score !== null && score >= 90;
         let matchesFilter = true;
         if (isUnflagged) {
-            matchesFilter = site.allSecure;
+            matchesFilter = unflagged;
         } else if (isFlagged) {
-            matchesFilter = !site.allSecure;
+            matchesFilter = !unflagged;
         }
         return matchesText && matchesFilter
     }).sort((a, b) => {
@@ -119,17 +135,15 @@ async function renderSiteList() {
     for (const [index, site] of filteredSites.entries()) {
         const card = document.createElement('div');
         card.className = 'site-card';
-        const secureStatus = site.allSecure
-            ? 'All cookies have the Secure flag'
-            : 'Contains cookies without the Secure flag';
+        const securityStatus = getSiteSecurityStatus(site);
         const domain = escapeHtml(site.domain);
         const pinned = site.isPinned;
         const vaultedCount = site.cookies.filter(cookie => cookie.isVaulted).length;
 
         card.innerHTML = `
           <div class="site-info">
-            <span class="status-dot status-dot--${site.allSecure ? 'safe' : 'unsafe'}"
-              title="${secureStatus}"></span>
+            <span class="${securityStatus.className}"
+              title="${escapeHtml(securityStatus.title)}"></span>
             <span class="site-name" title="${domain}">${domain}</span>
             <span class="site-cookie-count">${site.cookies.length}</span>
             ${vaultedCount > 0 ? `<span class="site-cookie-count site-cookie-count--vaulted" title="Vaulted cookies for this site" aria-label="${vaultedCount} vaulted cookies">${vaultedCount}</span>` : ''}
@@ -319,12 +333,10 @@ export async function updateSiteCard(domain: string): Promise<void> {
         const cookieCount = card.querySelector<HTMLElement>('.site-cookie-count');
         const vaultedBadge = card.querySelector<HTMLElement>('.site-cookie-count--vaulted');
 
-        // We plan on changing how status dot works later. Make sure to update
         if (statusDot) {
-            statusDot.className = `status-dot status-dot--${freshSite.allSecure ? 'safe' : 'unsafe'}`;
-            statusDot.title = freshSite.allSecure
-                ? 'All cookies have the Secure flag'
-                : 'Contains cookies without the Secure flag';
+            const securityStatus = getSiteSecurityStatus(freshSite);
+            statusDot.className = securityStatus.className;
+            statusDot.title = securityStatus.title;
         }
 
         if (cookieCount) {

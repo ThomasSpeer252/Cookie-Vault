@@ -273,6 +273,20 @@ input:checked + .slider:before {
         background-color: var(--accent-red);
         box-shadow: rgba(248, 113, 113, 0.5) 0 0 5px;
       }
+
+      &--yellow {
+        background-color: var(--accent-amber);
+        box-shadow: rgba(251, 191, 36, 0.5) 0 0 5px;
+      }
+
+      &--orange {
+        background-color: #fb923c;
+        box-shadow: rgba(251, 146, 60, 0.5) 0 0 5px;
+      }
+
+      &--empty {
+        background-color: var(--text-muted);
+      }
     }
 
     .site-name {
