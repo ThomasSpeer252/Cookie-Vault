@@ -679,6 +679,8 @@ input:checked + .slider:before {
 
     .profile-row {
       display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
       justify-content: space-between;
       font-size: 12px;
       border-bottom: 1px dashed var(--border-1);
@@ -895,6 +897,29 @@ input:checked + .slider:before {
   font-family: var(--font-mono);
   color: var(--text-muted);
   min-height: 94%;
+
+  .card-header {
+    align-items: flex-start;
+    gap: 8px;
+
+    .header-title {
+      flex: 1;
+      flex-wrap: wrap;
+
+      @supports (flex-wrap: balance) {
+        flex-wrap: balance;
+      }
+    }
+
+    .icon-btn {
+      flex-shrink: 0;
+    }
+
+    .entry-count,
+    .clear-log-btn {
+      white-space: nowrap;
+    }
+  }
   
   .operation-grid {
     display: grid;

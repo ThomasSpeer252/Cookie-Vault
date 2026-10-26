@@ -1,3 +1,4 @@
+import { t, getLocale } from '../i18n';
 export interface CookieFlag {
     label: string;
     kind: 'secure' | 'http-only' | 'same-site' | 'partitioned';
@@ -8,12 +9,12 @@ export function getCookieFlags(cookie: chrome.cookies.Cookie): CookieFlag[] {
     const flags: CookieFlag[] = [];
 
     if (cookie.secure) {
-        flags.push({ label: 'SEC', kind: 'secure', title: 'Secure' });
+        flags.push({ label: 'SEC', kind: 'secure', title: t('cookies.secure') });
     }
     if (cookie.httpOnly) {
-        flags.push({ label: 'HTTP', kind: 'http-only', title: 'HttpOnly' });
+        flags.push({ label: 'HTTP', kind: 'http-only', title: t('cookies.httpOnly') });
     }
-    if (cookie.partitionKey) flags.push({ label: 'Partitioned', kind: 'partitioned' });
+    if (cookie.partitionKey) flags.push({ label: t('cookies.partitioned'), kind: 'partitioned' });
 
     if (cookie.sameSite === 'strict') {
         flags.push({ label: 'SS:S', kind: 'same-site', title: 'SameSite=Strict' });
@@ -34,20 +35,20 @@ export interface CookieExpiration {
 export function formatCookieExpiration(cookie: chrome.cookies.Cookie): CookieExpiration {
     if (cookie.session || cookie.expirationDate === undefined) {
         return {
-            label: 'Session',
-            title: 'Expires when the browser session ends',
+            label: t('cookies.session'),
+            title: t('cookies.sessionHint'),
         };
     }
 
     const expiration = new Date(cookie.expirationDate * 1000);
 
     return {
-        label: expiration.toLocaleDateString(undefined, {
+        label: expiration.toLocaleDateString(getLocale(), {
             year: 'numeric',
-            month: 'short',
+            month: getLocale() === 'pt-BR' ? '2-digit' : 'short',
             day: 'numeric',
         }),
-        title: expiration.toLocaleString(undefined, {
+        title: expiration.toLocaleString(getLocale(), {
             year: 'numeric',
             month: 'long',
             day: 'numeric',
