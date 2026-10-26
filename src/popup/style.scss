@@ -906,6 +906,7 @@ input:checked + .slider:before {
       flex: 1;
       flex-wrap: wrap;
 
+      //noinspection CssInvalidPropertyValue
       @supports (flex-wrap: balance) {
         flex-wrap: balance;
       }
