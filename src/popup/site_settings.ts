@@ -1,4 +1,4 @@
-import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie } from './cookie_actions';
+import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie , CookieEditInput} from './cookie_actions';
 import {
     computeCookieSecurityScore,
     getCookieSecurityScoreBadgeClass,
@@ -6,7 +6,7 @@ import {
 } from './cookie_security_score';
 import { toVaultCookie, type CookieSite, type SiteCookie, getCookieSites } from './cookie_data';
 import { CookieDatabase } from '../db/CookieDatabase';
-import { openCookieEdit } from './cookie_edit';
+import { openCookieEdit, getValidationError } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
 import { openOverlay, type OverlayHandle } from './overlay';
 import { recordOperation } from "./operation_log";
@@ -14,9 +14,22 @@ import { recordOperation } from "./operation_log";
 export async function moveCookie(cookie: SiteCookie): Promise<void> {
     const db = CookieDatabase.getInstance();
     if (cookie.isVaulted) {
-        await restoreBrowserCookie(cookie);
-        await recordOperation("UNVAULT", `${cookie.name} unvaulted`, cookie.domain);
+        // reuse edit functionality, treat its values an an 'input'
+        const input: CookieEditInput = {
+            value: cookie.value,
+            secure: cookie.secure,
+            httpOnly: cookie.httpOnly,
+            sameSite: cookie.sameSite,
+            session: cookie.session || cookie.expirationDate === undefined,
+            expirationDate: cookie.expirationDate,
+        };
+        const validError = getValidationError(cookie, input)
+        if (validError) {
+            throw new Error(validError);
+        }
         try {
+            await restoreBrowserCookie(cookie);
+            await recordOperation("UNVAULT", `${cookie.name} unvaulted`, cookie.domain);
             await db.deleteCookie(cookie.vaultId, cookie.domain);
         } catch (error) {
             await removeBrowserCookie(cookie);
@@ -62,7 +75,7 @@ function renderCookie(cookie: SiteCookie, index: number): string {
               <path d="${cookie.isVaulted ? 'M5 7V4.5a3 3 0 0 1 6 0' : 'M5 7V4.5a3 3 0 0 1 6 0V7'}"/>
             </svg>
           </button>
-          <button type="button" class="icon-btn" data-action="edit-cookie" title="${cookie.isVaulted ? 'Unvault to edit' : 'Edit Cookie'}" ${cookie.isVaulted ? 'disabled' : ''}>
+          <button type="button" class="icon-btn" data-action="edit-cookie" title="Edit Cookie">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M11 2l3 3-9 9H2v-3l9-9z"/>
             </svg>
@@ -198,9 +211,7 @@ export function renderSiteDetails(
         if (!cookie) return;
 
         if (button.dataset.action === 'edit-cookie') {
-            if (!cookie.isVaulted) {
-                openCookieEdit(cookie, async () => {await renderSelf();});
-            }
+            openCookieEdit(cookie, async () => {await renderSelf();});
             return;
         }
 

@@ -1,6 +1,7 @@
 import { escapeHtml } from './cookie_format';
-import { updateCookie, type CookieEditInput } from './cookie_actions';
+import { updateCookie, updateVaultedCookie, type CookieEditInput } from './cookie_actions';
 import { openOverlay } from './overlay';
+import {SiteCookie} from "@/popup/cookie_data.ts";
 
 function sameSiteFromSelect(value: string): `${chrome.cookies.SameSiteStatus}` {
     if (value === 'strict' || value === 'lax' || value === 'no_restriction') {
@@ -17,10 +18,11 @@ function defaultExpirationLocal(cookie: chrome.cookies.Cookie): string {
 }
 
 export function openCookieEdit(
-    cookie: chrome.cookies.Cookie,
+    cookie: SiteCookie,
     onSaved: () => void | Promise<void>,
 ): void {
     const isSession = cookie.session || cookie.expirationDate === undefined;
+    const isVaulted = cookie.isVaulted
 
     const overlay = openOverlay(`
       <div class="site-details-view cookie-edit-view">
@@ -140,7 +142,11 @@ export function openCookieEdit(
         }
 
         try {
-            await updateCookie(cookie, input);
+            if (isVaulted) {
+                await updateVaultedCookie(cookie, input);
+            } else {
+                await updateCookie(cookie, input)
+            }
             close();
             await onSaved();
         } catch (error) {
@@ -154,7 +160,7 @@ export function openCookieEdit(
     overlay.element.querySelector<HTMLButtonElement>('[data-action="close-edit"]')?.focus();
 }
 
-function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInput): string | null {
+export function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInput): string | null {
     const name = cookie.name || '';
     const path = cookie.path || '/';
 
