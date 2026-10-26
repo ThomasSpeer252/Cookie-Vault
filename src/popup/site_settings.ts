@@ -1,13 +1,15 @@
-import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie, CookieEditInput} from './cookie_actions';
-import {toVaultCookie, type CookieSite, type SiteCookie, getCookieSites} from './cookie_data';
+import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie , CookieEditInput} from './cookie_actions';
+import {
+    computeCookieSecurityScore,
+    getCookieSecurityScoreBadgeClass,
+    getCookieSecurityScoreLabel,
+} from './cookie_security_score';
+import { toVaultCookie, type CookieSite, type SiteCookie, getCookieSites } from './cookie_data';
 import { CookieDatabase } from '../db/CookieDatabase';
 import { openCookieEdit, getValidationError } from './cookie_edit';
 import { escapeHtml, formatCookieExpiration, getCookieFlags } from './cookie_format';
 import { openOverlay, type OverlayHandle } from './overlay';
 import { recordOperation } from "./operation_log";
-
-const PLACEHOLDER_SECURITY = 'No Concerns Found';
-const PLACEHOLDER_SAFETY_SCORE = 94;
 
 export async function moveCookie(cookie: SiteCookie): Promise<void> {
     const db = CookieDatabase.getInstance();
@@ -116,6 +118,22 @@ export function renderSiteDetails(
 
     const secureCount = site.cookies.filter(cookie => cookie.secure).length;
     const httpOnlyCount = site.cookies.filter(cookie => cookie.httpOnly).length;
+    const securityScore = computeCookieSecurityScore(site);
+    const scoreDisplay = securityScore.score === null
+        ? '—'
+        : `${securityScore.score} / 100`;
+    const scoreBadgeClass = getCookieSecurityScoreBadgeClass(securityScore.score);
+    const scoreSummary = getCookieSecurityScoreLabel(securityScore.score);
+    const findingsHtml = securityScore.findings.length === 0
+        ? ''
+        : `<ul class="cookie-security-findings">
+            ${securityScore.findings.map(finding => `
+              <li class="cookie-security-finding cookie-security-finding--${finding.severity}">
+                <span class="cookie-security-finding__deduction">−${finding.deduction}</span>
+                <span class="cookie-security-finding__text">${escapeHtml(finding.message)}</span>
+                <span class="cookie-security-finding__cookie" title="${escapeHtml(finding.cookieName)}">${escapeHtml(finding.cookieName)}</span>
+              </li>`).join('')}
+          </ul>`;
 
     const content = `
       <div class="site-details-view">
@@ -134,7 +152,7 @@ export function renderSiteDetails(
               <span class="header-expires">EXPIRES</span>
             </div>
             <div class="cookie-list-container">
-              <div class="table-body">${site.cookies.map(renderCookie).join('')}</div>
+              <div class="table-body">${site.cookies.map((cookie, index) => renderCookie(cookie, index)).join('')}</div>
             </div>
             <p class="list-state list-state--error" data-vault-error hidden></p>
           </div>
@@ -145,28 +163,28 @@ export function renderSiteDetails(
             <span class="mono-label">SITE PROFILE</span>
           </header>
 
-          <div class="profile-grid">
-            <div class="profile-row">
-              <span class="profile-label">Cookies</span>
-              <span class="profile-value">${site.cookies.length}</span>
+          <div class="profile-container">
+              <div class="profile-grid">
+                <div class="profile-row">
+                  <span class="profile-label">Cookies</span>
+                  <span class="profile-value">${site.cookies.length}</span>
+                </div>
+                <div class="profile-row">
+                  <span class="profile-label">Secure</span>
+                  <span class="profile-value">${secureCount} / ${site.cookies.length}</span>
+                </div>
+                <div class="profile-row">
+                  <span class="profile-label">HttpOnly</span>
+                  <span class="profile-value">${httpOnlyCount} / ${site.cookies.length}</span>
+                </div>
+                <div class="profile-row">
+                  <span class="profile-label">Cookie Security Score</span>
+                  <span class="profile-value ${scoreBadgeClass}" title="Based on HttpOnly cookie flags and authentication/session cookies only.">${scoreDisplay}</span>
+                </div>
+                <p class="cookie-security-summary">${escapeHtml(scoreSummary)}</p>
+                ${findingsHtml}
+              </div>
             </div>
-            <div class="profile-row">
-              <span class="profile-label">Secure</span>
-              <span class="profile-value">${secureCount} / ${site.cookies.length}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">HttpOnly</span>
-              <span class="profile-value">${httpOnlyCount} / ${site.cookies.length}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Security</span>
-              <span class="profile-value status-green">${PLACEHOLDER_SECURITY}</span>
-            </div>
-            <div class="profile-row">
-              <span class="profile-label">Safety Score</span>
-              <span class="profile-value score-badge">${PLACEHOLDER_SAFETY_SCORE} / 100</span>
-            </div>
-          </div>
         </section>
       </div>
     `;
