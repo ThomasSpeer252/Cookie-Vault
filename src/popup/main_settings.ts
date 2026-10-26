@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { openOverlay } from './overlay';
 import { applyTheme } from './theme';
 import { recordOperation, renderLog } from './operation_log';
@@ -38,16 +39,16 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
     <section class="detail-card settings-card">
       <header class="card-header">
         <div class="header-title">
-          <span class="mono-label">SETTINGS</span>
+          <span class="mono-label">${t('settings.heading')}</span>
         </div>          
-        <button class="icon-btn" data-action="close-settings" title="Close">✕</button>
+        <button class="icon-btn" data-action="close-settings" title="${t('common.close')}">✕</button>
       </header>
 
       <div class="settings-grid info-grid">
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Dark Mode</span>
-              <span class="settings-minor">Toggle light/dark interface</span>
+              <span class="settings-label">${t('settings.darkMode')}</span>
+              <span class="settings-minor">${t('settings.darkModeHint')}</span>
           </div>
           <label class="switch">
             <input type="checkbox" data-key="darkMode">
@@ -57,8 +58,8 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
 
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Auto-Delete</span>
-              <span class="settings-minor">Delete risky cookies automatically</span>
+              <span class="settings-label">${t('settings.autoDelete')}</span>
+              <span class="settings-minor">${t('settings.autoDeleteHint')}</span>
           </div>
           <label class="switch">
             <input type="checkbox" data-key="autoDel">
@@ -68,8 +69,8 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
         
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Auto-Vault</span>
-              <span class="settings-minor">Vault new cookies from safe sites</span>
+              <span class="settings-label">${t('settings.autoVault')}</span>
+              <span class="settings-minor">${t('settings.autoVaultHint')}</span>
           </div>
           <label class="switch">
             <input type="checkbox" data-key="autoVault">
@@ -79,8 +80,8 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
 
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Detection Active</span>
-              <span class="settings-minor">Enable XSS/CSRF detection (Stretch)</span>
+              <span class="settings-label">${t('settings.detection')}</span>
+              <span class="settings-minor">${t('settings.detectionHint')}</span>
           </div>
           <label class="switch">
             <input type="checkbox" data-key="detectionActive">
@@ -90,13 +91,13 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
 
         <div class="settings-row">
           <div class="settings-info">
-              <span class="settings-label">Operation Log</span>
-              <span class="settings-minor">Activity history and alerts</span>
+              <span class="settings-label">${t('settings.log')}</span>
+              <span class="settings-minor">${t('settings.logHint')}</span>
           </div>
-          <button class="settings-view-btn op-log">☱ View</button>
+          <button class="settings-view-btn op-log">☱ ${t('settings.view')}</button>
         </div>
 
-        <button class="unvault-all-btn" data-action="unvault-all">Unvault Everything </button>
+        <button class="unvault-all-btn" data-action="unvault-all">${t('settings.unvaultAll')}</button>
 
       </div>
     </section>
@@ -143,11 +144,11 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
       await onVaultChanged();
     } catch (error) {
         if (overlay) throw error;
-        unvaultError = error instanceof Error ? error.message : 'Unable to unvault everything.';
+        unvaultError = error instanceof Error ? error.message : t('errors.unvault');
         return;
     } finally {
       unvaultAllButton.disabled = false;
-      recordOperation("UNVAULT_ALL", "All cookies unvaulted")
+      recordOperation("UNVAULT_ALL", JSON.stringify({ key: 'log.allUnvaulted' }))
     }
   });
 }

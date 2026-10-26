@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { CookieDatabase, type Cookie } from '../db/CookieDatabase';
 
 export type SiteCookie = chrome.cookies.Cookie & { isVaulted: boolean; vaultId: string };
@@ -49,7 +50,7 @@ function normalizeDomain(domain: string): string {
 
 export async function getCookieSites(): Promise<CookieSite[]> {
     if (typeof chrome === 'undefined' || !chrome.cookies) {
-        throw new Error('The Chrome cookies API is unavailable.');
+        throw new Error(t('errors.api'));
     }
 
     const browserCookies = await chrome.cookies.getAll({});

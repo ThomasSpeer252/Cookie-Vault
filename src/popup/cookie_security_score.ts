@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import type { CookieSite } from './cookie_data';
 
 const BASE_1A_SECURE_MISSING = 25;
@@ -137,7 +138,7 @@ function evaluateCookie(cookie: chrome.cookies.Cookie): ScoredFindingDraft[] {
             track: 2,
             cookie,
             baseDeduction: BASE_2A_AUTH_NO_HTTPONLY,
-            message: 'Authentication or session cookie is accessible to JavaScript (missing HttpOnly).',
+            message: t('security.authHttpOnly'),
             severity: 'critical',
         });
     } else if (cookie.httpOnly) {
@@ -150,7 +151,7 @@ function evaluateCookie(cookie: chrome.cookies.Cookie): ScoredFindingDraft[] {
                 track: 1,
                 cookie,
                 baseDeduction: Math.round(BASE_1B_SAMESITE_NONE_INSECURE * multiplier),
-                message: 'HttpOnly cookie allows cross-site use without Secure (SameSite=None).',
+                message: t('security.sameSite'),
                 severity: 'critical',
             });
         } else if (!cookie.secure) {
@@ -159,7 +160,7 @@ function evaluateCookie(cookie: chrome.cookies.Cookie): ScoredFindingDraft[] {
                 track: 1,
                 cookie,
                 baseDeduction: Math.round(BASE_1A_SECURE_MISSING * multiplier),
-                message: 'HttpOnly cookie can be sent over unencrypted connections (missing Secure).',
+                message: t('security.secure'),
                 severity: 'major',
             });
         }
@@ -173,7 +174,7 @@ function evaluateCookie(cookie: chrome.cookies.Cookie): ScoredFindingDraft[] {
                 track: 3,
                 cookie,
                 baseDeduction: BASE_3A_SUPER_LONG_LIVED,
-                message: 'Authentication or session cookie remains valid for over a year (minor).',
+                message: t('security.lifetime'),
                 severity: 'minor',
             });
         }
@@ -265,12 +266,12 @@ export function computeCookieSecurityScore(site: CookieSite): CookieSecurityScor
 }
 
 export function getCookieSecurityScoreLabel(score: number | null): string {
-    if (score === null) return 'No cookies stored for this site.';
-    if (score >= 90) return 'No significant cookie-security concerns identified.';
-    if (score >= 75) return 'Minor concerns.';
-    if (score >= 60) return 'Notable concerns.';
-    if (score >= 40) return 'Serious concerns.';
-    return 'Critical cookie-configuration concerns.';
+    if (score === null) return t('security.empty');
+    if (score >= 90) return t('security.safe');
+    if (score >= 75) return t('security.minor');
+    if (score >= 60) return t('security.notable');
+    if (score >= 40) return t('security.serious');
+    return t('security.critical');
 }
 
 export function getCookieSecurityScoreBadgeClass(score: number | null): string {

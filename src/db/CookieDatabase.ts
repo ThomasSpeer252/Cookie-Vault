@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 const DB_NAME = 'CookieVaultDB'
 const DB_VERSION = 4
 
@@ -97,7 +98,7 @@ export class CookieDatabase {
       const request = indexedDB.open(dbName || DB_NAME, dbVersion || DB_VERSION);
 
       request.onerror = () => {
-        reject(new Error(`Failed to open IndexedDB: ${request.error?.message}`));
+        reject(new Error(t('database.open', { error: String(request.error?.message) })));
       };
 
       request.onsuccess = () => {
@@ -124,7 +125,7 @@ export class CookieDatabase {
         };
 
         getAllRequest.onerror = () => {
-          reject(new Error(`Failed to get all cookies: ${getAllRequest.error?.message}`));
+          reject(new Error(t('database.readAllCookies', { error: String(getAllRequest.error?.message) })));
         };
       };
 
@@ -189,7 +190,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async upsertCookies(cookies: Cookie[]): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       // TODO: Add encryption later
@@ -202,7 +203,7 @@ export class CookieDatabase {
       };
 
       transaction.onerror = () => {
-        reject(new Error(`Failed to insert cookies: ${transaction.error?.message}`));
+        reject(new Error(t('database.insertCookies', { error: String(transaction.error?.message) })));
       };
 
       for (const cookie of cookies) {
@@ -235,7 +236,7 @@ export class CookieDatabase {
    */
   public async deleteCookie(id: string, domain: string): Promise<void> {
     // TODO: Consider a deletion method that only requires ID. 
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('cookies', 'readwrite');
@@ -259,7 +260,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to delete cookie: ${request.error?.message}`));
+        reject(new Error(t('database.deleteCookie', { error: String(request.error?.message) })));
       };
     });
   }
@@ -270,7 +271,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async deleteCookiesByDomain(domain: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('cookies', 'readwrite');
@@ -301,7 +302,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to delete cookies: ${request.error?.message}`));
+        reject(new Error(t('database.deleteCookies', { error: String(request.error?.message) })));
       };
     });
   }
@@ -311,7 +312,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async deleteAllCookies(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('cookies', 'readwrite');
@@ -325,7 +326,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to delete all cookies: ${request.error?.message}`));
+        reject(new Error(t('database.deleteAllCookies', { error: String(request.error?.message) })));
       };
     });
   }
@@ -336,7 +337,7 @@ export class CookieDatabase {
    * @returns {Promise<Cookie[]>}
    */
   public async getCookiesByDomain(domain: string): Promise<Cookie[]> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('cookies', 'readonly');
@@ -349,7 +350,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to get cookies: ${request.error?.message}`));
+        reject(new Error(t('database.readCookies', { error: String(request.error?.message) })));
       };
     });
   }
@@ -385,7 +386,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async addLogEntry(entry: Omit<LogEntry, 'id'>): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('operationLogs', 'readwrite');
@@ -395,7 +396,7 @@ export class CookieDatabase {
 
       transaction.oncomplete = () => resolve();
       transaction.onerror = () => {
-        reject(new Error(`Failed to add log entry: ${transaction.error?.message}`));
+        reject(new Error(t('database.addLog', { error: String(transaction.error?.message) })));
       };
     });
   }
@@ -407,7 +408,7 @@ export class CookieDatabase {
    * @returns {Promise<LogEntry[]>} - A promise that resolves to an array of log entries.
    */
   public async getLogEntries(limit = 100): Promise<LogEntry[]> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('operationLogs', 'readonly');
@@ -424,7 +425,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to get log entries: ${request.error?.message}`));
+        reject(new Error(t('database.readLog', { error: String(request.error?.message) })));
       };
     });
   }
@@ -434,7 +435,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async clearLogEntries(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('operationLogs', 'readwrite');
@@ -442,7 +443,7 @@ export class CookieDatabase {
 
       request.onsuccess = () => resolve();
       request.onerror = () => {
-        reject(new Error(`Failed to clear log entries: ${request.error?.message}`));
+        reject(new Error(t('database.clearLog', { error: String(request.error?.message) })));
       };
     });
   }
@@ -453,7 +454,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async upsertSiteProfile(profile: SiteProfile): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('siteProfiles', 'readwrite');
@@ -465,7 +466,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to upsert site profile: ${request.error?.message}`));
+        reject(new Error(t('database.saveProfile', { error: String(request.error?.message) })));
       };
     });
   }
@@ -476,7 +477,7 @@ export class CookieDatabase {
    * @returns {Promise<SiteProfile | undefined>}
    */
   public async getSiteProfile(domain: string): Promise<SiteProfile | undefined> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('siteProfiles', 'readonly');
@@ -488,7 +489,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to get site profile: ${request.error?.message}`));
+        reject(new Error(t('database.readProfile', { error: String(request.error?.message) })));
       };
     });
   }
@@ -498,7 +499,7 @@ export class CookieDatabase {
    * @returns {Promise<SiteProfile[]>}
    */
   public async getAllSiteProfiles(): Promise<SiteProfile[]> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('siteProfiles', 'readonly');
@@ -510,7 +511,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to get all site profiles: ${request.error?.message}`));
+        reject(new Error(t('database.readAllProfiles', { error: String(request.error?.message) })));
       };
     });
   }
@@ -521,7 +522,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async deleteSiteProfile(domain: string): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('siteProfiles', 'readwrite');
@@ -533,7 +534,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to delete site profile: ${request.error?.message}`));
+        reject(new Error(t('database.deleteProfile', { error: String(request.error?.message) })));
       };
     });
   }
@@ -543,7 +544,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async deleteAllSiteProfiles(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction('siteProfiles', 'readwrite');
@@ -555,7 +556,7 @@ export class CookieDatabase {
       };
 
       request.onerror = () => {
-        reject(new Error(`Failed to delete all site profiles: ${request.error?.message}`));
+        reject(new Error(t('database.deleteAllProfiles', { error: String(request.error?.message) })));
       };
     });
   }
@@ -587,7 +588,7 @@ export class CookieDatabase {
    * @returns {Promise<void>}
    */
   public async clearDatabase(): Promise<void> {
-    if (!this.db) throw new Error('Database not initialized');
+    if (!this.db) throw new Error(t('database.notInitialized'));
 
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['cookies', 'siteProfiles', 'operationLogs'], 'readwrite');
@@ -606,11 +607,11 @@ export class CookieDatabase {
       };
 
       transaction.onerror = () => {
-        reject(new Error(`Failed to clear database: ${transaction.error?.message}`));
+        reject(new Error(t('database.clear', { error: String(transaction.error?.message) })));
       };
 
       transaction.onabort = () => {
-        reject(new Error(`Database clear aborted: ${transaction.error?.message}`));
+        reject(new Error(t('database.aborted', { error: String(transaction.error?.message) })));
       };
     });
   }

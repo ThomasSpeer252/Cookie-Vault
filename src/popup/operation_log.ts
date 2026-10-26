@@ -1,3 +1,5 @@
+import { t, getLocale } from '../i18n';
+import { escapeHtml } from './cookie_format';
 import { CookieDatabase, LogEntry, OperationType } from '@/db/CookieDatabase';
 import { openOverlay } from './overlay';
 
@@ -44,7 +46,7 @@ export async function recordOperation(op: OperationType, detail: string, site: s
       detail: detail
     });
   } catch (error) {
-    opError = error instanceof Error ? error.message : 'Failed to record operation.';
+    opError = error instanceof Error ? error.message : t('errors.record');
     return;
   }
 };
@@ -53,59 +55,76 @@ async function clearLog(root: HTMLElement) {
   try {
     await CookieDatabase.getInstance().clearLogEntries();
   } catch (error) {
-    opError = error instanceof Error ? error.message : 'Failed to clear log.';
+    opError = error instanceof Error ? error.message : t('errors.clear');
     return;
   }
   const events = root.querySelector('.operation-events');
   const count = root.querySelector('.entry-count');
   if (events) events.innerHTML = '';
-  if (count) count.textContent = '0 entries';
+  if (count) count.textContent = t('log.entries', { count: 0 });
+}
+
+export function localizeOperationDetail(entry: OperationEntry): string {
+  // New records store message keys and values, keeping history language independent.
+  try {
+    const detail = JSON.parse(entry.type);
+    if (['log.deleted', 'log.vaulted', 'log.unvaulted', 'log.allUnvaulted'].includes(detail.key)) {
+      return t(detail.key, detail.values);
+    }
+  } catch { /* Older versions stored English descriptions. */ }
+  if (entry.op === 'UNVAULT_ALL' && entry.type === 'All cookies unvaulted') return t('log.allUnvaulted');
+  const legacy = { VAULT: [' vaulted', 'log.vaulted'], UNVAULT: [' unvaulted', 'log.unvaulted'], DELETE: [' deleted', 'log.deleted'] }[entry.op];
+  if (legacy && entry.type.endsWith(legacy[0])) {
+    return t(legacy[1], { name: entry.type.slice(0, -legacy[0].length) });
+  }
+  return entry.type;
 }
 
 function renderEvent(entry: OperationEntry): string {
   const date = new Date(entry.timestamp);
+  const operationKey = { VAULT: 'vault', UNVAULT: 'unvault', UNVAULT_ALL: 'unvaultAll', BLOCK: 'block', WARN: 'warn', DELETE: 'delete' }[entry.op];
 
   return `
       <div class="operation-entry">
       <div class="operation-col timestamp">
-        <span class="operation-date">${(date).toLocaleDateString()}</span>
-        <span class="operation-time">${(date).toLocaleTimeString()}</span>
+        <span class="operation-date">${date.toLocaleDateString(getLocale())}</span>
+        <span class="operation-time">${date.toLocaleTimeString(getLocale())}</span>
       </div>
       <div class="operation-col operation">
-        <span class="operation-badge operation-badge-${OP_TYPES[entry.op]}">${(entry.op)}</span>
+        <span class="operation-badge operation-badge-${OP_TYPES[entry.op]}">${t(`log.operations.${operationKey}`)}</span>
       </div>
       <div class="operation-col detail">
-        <span class="operation-detail">${(entry.type)}</span>
-        <span class="operation-site">${(entry.site)}</span>
+        <span class="operation-detail">${escapeHtml(localizeOperationDetail(entry))}</span>
+        <span class="operation-site">${escapeHtml(entry.site === ALL_SITES ? t('log.allSites') : entry.site)}</span>
       </div>
     </div>`;
 }
 
 export async function renderLog() {
   const operations = await getOperations();
-  const entryLabel = operations.length === 1 ? 'entry' : 'entries';
+  const entryLabel = t(operations.length === 1 ? 'log.entry' : 'log.entries', { count: operations.length });
 
   const overlay = openOverlay(`
   <div class="site-details-view operation-view">
     <section class="detail-card operation-card">
       <header class="card-header">
         <div class="header-title">
-          <span class="mono-label">OPERATION LOG</span>
-          <span class="entry-count">${operations.length} ${entryLabel}</span>
-          <button class="clear-log-btn" data-action="clear-log">Clear Log</span>
+          <span class="mono-label">${t('log.heading')}</span>
+          <span class="entry-count">${entryLabel}</span>
+          <button class="clear-log-btn" data-action="clear-log">${t('log.clear')}</button>
         </div>          
-        <button class="icon-btn" data-action="close-settings" title="Close">✕</button>
+        <button class="icon-btn" data-action="close-settings" title="${t('common.close')}">✕</button>
       </header>
 
       <div class="operation-grid info-grid">
         <div class="operation-col timestamp">
-          <span class="operation-header">TIMESTAMP</span>
+          <span class="operation-header">${t('log.timestamp')}</span>
         </div>
         <div class="operation-col operation">
-          <span class="operation-header">OP</span>
+          <span class="operation-header">${t('log.operation')}</span>
         </div>
         <div class="operation-col detail">
-          <span class="operation-header">DETAIL</span>
+          <span class="operation-header">${t('log.detail')}</span>
         </div>
       </div>
       

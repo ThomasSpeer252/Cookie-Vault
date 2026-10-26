@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { removeBrowserCookie, restoreBrowserCookie, deleteSpecificCookie , CookieEditInput} from './cookie_actions';
 import {
     computeCookieSecurityScore,
@@ -29,7 +30,7 @@ export async function moveCookie(cookie: SiteCookie): Promise<void> {
         }
         try {
             await restoreBrowserCookie(cookie);
-            await recordOperation("UNVAULT", `${cookie.name} unvaulted`, cookie.domain);
+            await recordOperation("UNVAULT", JSON.stringify({ key: 'log.unvaulted', values: { name: cookie.name } }), cookie.domain);
             await db.deleteCookie(cookie.vaultId, cookie.domain);
         } catch (error) {
             await removeBrowserCookie(cookie);
@@ -41,7 +42,7 @@ export async function moveCookie(cookie: SiteCookie): Promise<void> {
         } catch {}
 
         await db.upsertCookie(toVaultCookie(cookie));
-        await recordOperation("VAULT", `${cookie.name} vaulted`, cookie.domain);
+        await recordOperation("VAULT", JSON.stringify({ key: 'log.vaulted', values: { name: cookie.name } }), cookie.domain);
         try {
             await removeBrowserCookie(cookie);
         } catch (error) {
@@ -58,7 +59,7 @@ function renderCookie(cookie: SiteCookie, index: number): string {
             : ''}>${flag.label}</span>`)
         .join('');
     const expiration = formatCookieExpiration(cookie);
-    const name = cookie.name || '(unnamed)';
+    const name = cookie.name || t('common.unnamed');
 
     return `
       <div class="cookie-row"
@@ -69,18 +70,18 @@ function renderCookie(cookie: SiteCookie, index: number): string {
         </div>
         <span class="cookie-expires" title="${escapeHtml(expiration.title)}">${escapeHtml(expiration.label)}</span>
         <div class="button-group" data-density="compact">
-          <button type="button" class="icon-btn${cookie.isVaulted ? ' icon-btn--amber' : ''}" data-action="lock-cookie" title="${cookie.isVaulted ? 'Unvault Cookie' : 'Vault Cookie'}">
+          <button type="button" class="icon-btn${cookie.isVaulted ? ' icon-btn--amber' : ''}" data-action="lock-cookie" title="${cookie.isVaulted ? t('cookies.unvault') : t('cookies.vault')}">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <rect x="3" y="7" width="10" height="7" rx="1.5"/>
               <path d="${cookie.isVaulted ? 'M5 7V4.5a3 3 0 0 1 6 0' : 'M5 7V4.5a3 3 0 0 1 6 0V7'}"/>
             </svg>
           </button>
-          <button type="button" class="icon-btn" data-action="edit-cookie" title="Edit Cookie">
+          <button type="button" class="icon-btn" data-action="edit-cookie" title="${t('cookies.edit')}">
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M11 2l3 3-9 9H2v-3l9-9z"/>
             </svg>
           </button>
-          <button type="button" class="icon-btn" data-action="delete-cookie" title="Delete Cookie">
+          <button type="button" class="icon-btn" data-action="delete-cookie" title="${t('cookies.delete')}">
             <svg width="11" height="11" viewBox="0 0 13 13" fill="none">
               <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
             </svg>
@@ -140,16 +141,16 @@ export function renderSiteDetails(
         <section class="detail-card cookies-card">
           <header class="card-header">
             <div class="header-title">
-              <span class="mono-label">COOKIES —</span>
+              <span class="mono-label">${t('cookies.heading')}</span>
               <span class="domain-badge" title="${escapeHtml(site.domain)}">${escapeHtml(site.domain)}</span>
             </div>
-            <button type="button" class="icon-btn" data-action="close-details" title="Close">✕</button>
+            <button type="button" class="icon-btn" data-action="close-details" title="${t('common.close')}">✕</button>
           </header>
 
           <div class="cookies-table">
             <div class="table-header">
-              <span>NAME / FLAGS</span>
-              <span class="header-expires">EXPIRES</span>
+              <span>${t('cookies.nameFlags')}</span>
+              <span class="header-expires">${t('cookies.expiresHeader')}</span>
             </div>
             <div class="cookie-list-container">
               <div class="table-body">${site.cookies.map((cookie, index) => renderCookie(cookie, index)).join('')}</div>
@@ -160,26 +161,26 @@ export function renderSiteDetails(
 
         <section class="detail-card profile-card">
           <header class="card-header">
-            <span class="mono-label">SITE PROFILE</span>
+            <span class="mono-label">${t('cookies.profile')}</span>
           </header>
 
           <div class="profile-container">
               <div class="profile-grid">
                 <div class="profile-row">
-                  <span class="profile-label">Cookies</span>
+                  <span class="profile-label">${t('cookies.count')}</span>
                   <span class="profile-value">${site.cookies.length}</span>
                 </div>
                 <div class="profile-row">
-                  <span class="profile-label">Secure</span>
+                  <span class="profile-label">${t('cookies.secure')}</span>
                   <span class="profile-value">${secureCount} / ${site.cookies.length}</span>
                 </div>
                 <div class="profile-row">
-                  <span class="profile-label">HttpOnly</span>
+                  <span class="profile-label">${t('cookies.httpOnly')}</span>
                   <span class="profile-value">${httpOnlyCount} / ${site.cookies.length}</span>
                 </div>
                 <div class="profile-row">
-                  <span class="profile-label">Cookie Security Score</span>
-                  <span class="profile-value ${scoreBadgeClass}" title="Based on HttpOnly cookie flags and authentication/session cookies only.">${scoreDisplay}</span>
+                  <span class="profile-label">${t('cookies.score')}</span>
+                  <span class="profile-value ${scoreBadgeClass}" title="${t('cookies.scoreHint')}">${scoreDisplay}</span>
                 </div>
                 <p class="cookie-security-summary">${escapeHtml(scoreSummary)}</p>
                 ${findingsHtml}
@@ -223,7 +224,7 @@ export function renderSiteDetails(
             if (button.dataset.action === 'delete-cookie') {
                 await deleteSpecificCookie(cookie);
                 //await renderSelf();
-                await recordOperation("DELETE", `${cookie.name} deleted`, cookie.domain);
+                await recordOperation("DELETE", JSON.stringify({ key: 'log.deleted', values: { name: cookie.name } }), cookie.domain);
                 
             } else {
                 await moveCookie(cookie);
@@ -232,7 +233,7 @@ export function renderSiteDetails(
         } catch (error) {
             button.disabled = false;
             if (errorEl) {
-                errorEl.textContent = error instanceof Error ? error.message : 'Unable to move the cookie.';
+                errorEl.textContent = error instanceof Error ? error.message : t('errors.move');
                 errorEl.hidden = false;
             }
         }

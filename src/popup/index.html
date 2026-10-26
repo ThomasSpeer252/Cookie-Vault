@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,100..800;1,100..800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
 
-  <title>Cookie Vault</title>
+  <title data-i18n="app.name">Cookie Vault</title>
 </head>
 <body class="">
 <div id="app">
@@ -23,7 +23,7 @@
         </svg>
       </div>
       <div>
-        <div class="title">
+        <div class="title" data-i18n="app.name">
           Cookie Vault
         </div>
         <div class="version-number">
@@ -32,7 +32,7 @@
       </div>
     </div>
     <div class="header-actions">
-      <button id="settings-btn" class="icon-btn" title="Settings">
+      <button id="settings-btn" class="icon-btn" data-i18n-title="home.settings" title="Settings">
         <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
           <mask id="gear-bore">
             <rect width="16" height="16" fill="white"></rect>
@@ -54,24 +54,23 @@
   <main class="vault-body">
     <!-- Filter buttons -->
     <div class="filter-controls">
-      </label>
       <label class="filter-chip">
         <input type="radio" name="status-filter" id="filter-unflagged" />
-        <span>Unflagged</span>
+        <span data-i18n="home.unflagged">Unflagged</span>
       </label>
       <label class="filter-chip">
         <input type="radio" name="status-filter" id="filter-flagged" />
-        <span>Flagged</span>
+        <span data-i18n="home.flagged">Flagged</span>
       </label>
       <label class="filter-chip">
         <input type="radio"  name="status-filter" id="filter-both" checked />
-        <span>Both</span>
+        <span data-i18n="home.both">Both</span>
       </label>
     </div>
 
     <!-- Manual search bar -->
     <div class="search-bar">
-      <input type="text" id="site-search" placeholder="Search domain..." />
+      <input type="text" id="site-search" data-i18n-placeholder="home.search" placeholder="Search domain..." />
     </div>
 
     <div id="site-list" class="site-list">

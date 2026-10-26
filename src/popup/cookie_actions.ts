@@ -1,3 +1,4 @@
+import { t } from '../i18n';
 import { CookieDatabase } from "../db/CookieDatabase.ts";
 import {SiteCookie, toVaultCookie} from "./cookie_data.ts";
 
@@ -31,7 +32,7 @@ export async function restoreBrowserCookie(cookie: chrome.cookies.Cookie): Promi
         ...(!cookie.session && cookie.expirationDate !== undefined
             ? { expirationDate: cookie.expirationDate } : {}),
     });
-    if (!restored) throw new Error('The browser did not restore the cookie.');
+    if (!restored) throw new Error(t('errors.restore'));
 }
 
 function promisify<T>(fn: (cb: (result: T) => void) => void): Promise<T> {
