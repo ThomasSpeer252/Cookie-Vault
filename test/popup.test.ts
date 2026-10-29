@@ -4,17 +4,73 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import popupHtml from '../src/popup/index.html?raw';
 
-describe('Cookie Vault Popup Real HTML Integration Tests', () => {
-    beforeEach(() => {
-        // Stop Happy-DOM from throwing resource load warnings
-        const sanitizedHtml = popupHtml
+vi.stubGlobal('indexedDB', {
+    open: vi.fn().mockReturnValue({
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        result: { createObjectStore: vi.fn() },
+    }),
+});
+
+vi.mock('../src/db/CookieDatabase', () => ({
+    CookieDatabase: {
+        getInstance: () => ({
+            init: vi.fn().mockResolvedValue(undefined),
+            getAllSiteProfiles: vi.fn().mockResolvedValue([
+                { domain: 'site-b-safe.com', isPinned: true }
+            ]),
+            getSiteProfile: vi.fn().mockResolvedValue(null),
+            upsertSiteProfile: vi.fn().mockResolvedValue(undefined),
+        }),
+    },
+}));
+
+vi.mock('../src/popup/cookie_data', () => ({
+    getCookieSites: vi.fn().mockResolvedValue([
+        {
+            domain: 'site-a-flagged.com',
+            cookies: [{ name: 'session', isVaulted: false }],
+            securityScore: 50,
+        },
+        {
+            domain: 'site-b-safe.com',
+            cookies: [{ name: 'session', isVaulted: true }],
+            securityScore: 95,
+            isPinned: true,
+        },
+    ]),
+}));
+
+const mockPermissionsContains = vi.fn().mockResolvedValue(true);
+
+vi.stubGlobal('chrome', {
+    storage: {
+        sync: {
+            get: vi.fn().mockResolvedValue({ darkMode: false }),
+            set: vi.fn().mockResolvedValue(undefined),
+        },
+    },
+    permissions: {
+        contains: mockPermissionsContains,
+        request: vi.fn().mockResolvedValue(true),
+    },
+    cookies: {
+        getAll: vi.fn().mockResolvedValue([]),
+    },
+});
+
+describe('Cookie Vault Tests', () => {
+    beforeEach(async () => {
+        vi.resetModules();
+        document.body.innerHTML = popupHtml
             .replace(/<link[^>]*>/gi, '')
             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
-
-        document.body.innerHTML = sanitizedHtml;
     });
 
-    test('1. Load Headers (Title / Version)', () => {
+    test('1. Load Headers (Title / Version)', async () => {
+        const { initPopup } = await import('../src/popup/main');
+        await initPopup();
+
         const titleElement = document.querySelector('.vault-header .title');
         const versionElement = document.querySelector('.version-number');
 
@@ -22,29 +78,43 @@ describe('Cookie Vault Popup Real HTML Integration Tests', () => {
         expect(versionElement?.textContent?.trim()).toBe('v0.1.0');
     });
 
-    test('2. Site list has content (i.e. example.com)', () => {
-        const siteListContainer = document.getElementById('site-list');
+    test('2. Site List loads', async () => {
+        const { initPopup } = await import('../src/popup/main');
+        await initPopup();
+
+        const siteListContainer = document.getElementById('site-list') as HTMLElement;
         expect(siteListContainer).not.toBeNull();
+
+        await vi.waitUntil(() => siteListContainer.querySelectorAll('.site-card').length === 2, { timeout: 3000 });
+        expect(siteListContainer.querySelectorAll('.site-card').length).toBe(2);
     });
 
-    test('3. Search example.com', () => {
+    test('3. Search bar retains correct site', async () => {
+        const { initPopup } = await import('../src/popup/main');
+        await initPopup();
+
         const searchInput = document.getElementById('site-search') as HTMLInputElement;
         expect(searchInput).not.toBeNull();
-        searchInput.value = 'example.com';
-        expect(searchInput.value).toBe('example.com');
+        searchInput.value = 'site-a';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+        expect(searchInput.value).toBe('site-a');
     });
 
-    test('4. Status filter radio buttons exist in real HTML', () => {
-        const unflaggedRadio = document.getElementById('filter-unflagged');
-        const flaggedRadio = document.getElementById('filter-flagged');
-        const bothRadio = document.getElementById('filter-both');
+    test('4. Permission prompt appears when required', async () => {
+        mockPermissionsContains.mockResolvedValueOnce(false);
 
-        expect(unflaggedRadio).not.toBeNull();
-        expect(flaggedRadio).not.toBeNull();
-        expect(bothRadio).not.toBeNull();
+        const { initPopup } = await import('../src/popup/main');
+        await initPopup();
+
+        const prompt = document.querySelector('.permission-prompt');
+        expect(prompt).not.toBeNull();
+        expect(document.getElementById('grant-cookies-btn')).not.toBeNull();
     });
 
-    test('5. Settings Call', () => {
+    test('5. Call Settings Popup', async () => {
+        const { initPopup } = await import('../src/popup/main');
+        await initPopup();
+
         const settingsBtn = document.getElementById('settings-btn') as HTMLButtonElement;
         expect(settingsBtn).toBeTruthy();
 

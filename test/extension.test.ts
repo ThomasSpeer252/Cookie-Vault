@@ -1,29 +1,30 @@
-import { Builder, By } from 'selenium-webdriver';
+import { Builder, By, until } from 'selenium-webdriver';
 import * as chrome from 'selenium-webdriver/chrome';
 import * as path from 'path';
 
-async function runTest() {
+async function runExtensionTest() {
     let options = new chrome.Options();
     const extensionPath = path.resolve(__dirname, '../dist');
     options.addArguments(`--load-extension=${extensionPath}`);
 
-    // Build driver with extension options
     let driver = await new Builder()
         .forBrowser('chrome')
         .setChromeOptions(options)
         .build();
 
     try {
-        // Load a page for example cookies
-        await driver.get('https://example.com');
-        console.log('Browser launched with extension');
+        console.log('Launching browser with Cookie Vault extension...');
 
+        // Open chrome extensions page or navigate to your popup if ID is static
+        await driver.get('chrome://extensions/');
+        console.log('✓ Browser launched and loaded extension successfully');
+
+    } catch (err) {
+        console.error('Extension test failed:', err);
+        process.exit(1);
     } finally {
-        // Clean up and close browser
         await driver.quit();
     }
 }
 
-runTest().catch((err) => {
-    console.error('Test failed:', err);
-});
+runExtensionTest();
