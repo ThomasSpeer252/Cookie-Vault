@@ -15,6 +15,10 @@ export default defineManifest({
     },
     default_popup: 'src/popup/index.html',
   },
+  background: {
+    "service_worker": "src/popup/av_cookie_listener.ts",
+    "type": "module"
+  },
   content_scripts: [{
     js: ['src/content/main.ts'],
     matches: ['https://*/*'],

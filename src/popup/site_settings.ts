@@ -15,6 +15,10 @@ import { recordOperation } from "./operation_log";
 export async function moveCookie(cookie: SiteCookie): Promise<void> {
     const db = CookieDatabase.getInstance();
     if (cookie.isVaulted) {
+        // For autovaulting: skip vaulting a cookie if a user unvaults while on
+        await chrome.storage.session.set({ [`skip:${cookie.vaultId}`]: true }); 
+        await restoreBrowserCookie(cookie);
+        await recordOperation("UNVAULT", `${cookie.name} unvaulted`, cookie.domain);
         // reuse edit functionality, treat its values an an 'input'
         const input: CookieEditInput = {
             value: cookie.value,
