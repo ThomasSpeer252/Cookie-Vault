@@ -10,6 +10,7 @@ import { CookieDatabase, type SiteProfile } from '../db/CookieDatabase';
 import { applyTheme } from './theme';
 import { deleteSpecificCookie } from './cookie_actions';
 import { recordOperation } from "./operation_log";
+import { renderXssDevPanel } from './xss_dev_panel';
 
 let sites: CookieSite[] = [];
 let isLoading = true;
@@ -371,6 +372,7 @@ function bindHomeEventListeners() {
     document.getElementById('filter-unflagged')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-flagged')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-both')?.addEventListener('change', renderSiteList);
+    document.getElementById('xss-dev-btn')?.addEventListener('click', () => renderXssDevPanel());
     document.getElementById('settings-btn')?.addEventListener('click', () => void renderSettings(loadCookies));
 }
 
