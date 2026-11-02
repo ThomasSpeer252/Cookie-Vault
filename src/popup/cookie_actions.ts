@@ -1,5 +1,6 @@
+import { t } from '../i18n';
 import { CookieDatabase } from "../db/CookieDatabase.ts";
-import type { SiteCookie } from "./cookie_data.ts";
+import {SiteCookie, toVaultCookie} from "./cookie_data.ts";
 
 export function cookieUrl(cookie: chrome.cookies.Cookie): string {
     const host = cookie.domain.replace(/^\./, '');
@@ -31,7 +32,7 @@ export async function restoreBrowserCookie(cookie: chrome.cookies.Cookie): Promi
         ...(!cookie.session && cookie.expirationDate !== undefined
             ? { expirationDate: cookie.expirationDate } : {}),
     });
-    if (!restored) throw new Error('The browser did not restore the cookie.');
+    if (!restored) throw new Error(t('errors.restore'));
 }
 
 function promisify<T>(fn: (cb: (result: T) => void) => void): Promise<T> {
@@ -77,6 +78,25 @@ export async function updateCookie(
     }
 
     return promisify((cb) => chrome.cookies.set(details, cb));
+}
+
+export async function updateVaultedCookie(
+    cookie: SiteCookie,
+    input: CookieEditInput,
+): Promise<void> {
+    const db = CookieDatabase.getInstance();
+
+    const updated = {
+        ...cookie,
+        value: input.value,
+        secure: input.secure,
+        httpOnly: input.httpOnly,
+        sameSite: input.sameSite,
+        session: input.session,
+        expirationDate: input.session ? null : (input.expirationDate ?? null),
+    };
+
+    await db.upsertCookie(toVaultCookie(updated))
 }
 
 export async function deleteSpecificCookie(cookie: SiteCookie): Promise<void> {

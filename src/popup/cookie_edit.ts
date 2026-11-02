@@ -1,6 +1,8 @@
+import { t } from '../i18n';
 import { escapeHtml } from './cookie_format';
-import { updateCookie, type CookieEditInput } from './cookie_actions';
+import { updateCookie, updateVaultedCookie, type CookieEditInput } from './cookie_actions';
 import { openOverlay } from './overlay';
+import {SiteCookie} from "@/popup/cookie_data.ts";
 
 function sameSiteFromSelect(value: string): `${chrome.cookies.SameSiteStatus}` {
     if (value === 'strict' || value === 'lax' || value === 'no_restriction') {
@@ -17,64 +19,65 @@ function defaultExpirationLocal(cookie: chrome.cookies.Cookie): string {
 }
 
 export function openCookieEdit(
-    cookie: chrome.cookies.Cookie,
+    cookie: SiteCookie,
     onSaved: () => void | Promise<void>,
 ): void {
     const isSession = cookie.session || cookie.expirationDate === undefined;
+    const isVaulted = cookie.isVaulted
 
     const overlay = openOverlay(`
       <div class="site-details-view cookie-edit-view">
         <section class="detail-card">
           <header class="card-header">
             <div class="header-title">
-              <span class="mono-label">EDIT COOKIE</span>
-              <span class="domain-badge">${escapeHtml(cookie.name || '(unnamed)')}</span>
+              <span class="mono-label">${t('edit.heading')}</span>
+              <span class="domain-badge">${escapeHtml(cookie.name || t('common.unnamed'))}</span>
             </div>
-            <button type="button" class="icon-btn" data-action="close-edit" title="Close">✕</button>
+            <button type="button" class="icon-btn" data-action="close-edit" title="${t('common.close')}">✕</button>
           </header>
 
           <form class="cookie-edit-form" id="cookie-edit-form">
             <label class="cookie-edit-field">
-              <span>Value</span>
+              <span>${t('edit.value')}</span>
               <input type="text" name="value" required value="${escapeHtml(cookie.value)}" />
             </label>
 
             <label class="cookie-edit-field cookie-edit-field--readonly">
-              <span>Domain</span>
+              <span>${t('edit.domain')}</span>
               <input type="text" readonly value="${escapeHtml(cookie.domain)}" />
             </label>
 
             <label class="cookie-edit-field cookie-edit-field--readonly">
-              <span>Path</span>
+              <span>${t('edit.path')}</span>
               <input type="text" readonly value="${escapeHtml(cookie.path)}" />
             </label>
 
             <div class="cookie-edit-flags">
-              <label><input type="checkbox" name="secure" ${cookie.secure ? 'checked' : ''} /> Secure</label>
-              <label><input type="checkbox" name="httpOnly" ${cookie.httpOnly ? 'checked' : ''} /> HttpOnly</label>
-              <label><input type="checkbox" name="session" ${isSession ? 'checked' : ''} /> Session</label>
+              <label><input type="checkbox" name="secure" ${cookie.secure ? 'checked' : ''} /> ${t('cookies.secure')}</label>
+              <label><input type="checkbox" name="httpOnly" ${cookie.httpOnly ? 'checked' : ''} /> ${t('cookies.httpOnly')}</label>
+              <label><input type="checkbox" name="session" ${isSession ? 'checked' : ''} /> ${t('cookies.session')}</label>
             </div>
 
             <label class="cookie-edit-field">
-              <span>SameSite</span>
+              <span>${t('edit.sameSite')}</span>
               <select name="sameSite">
-                <option value="unspecified" ${cookie.sameSite === 'unspecified' ? 'selected' : ''}>Unspecified</option>
-                <option value="lax" ${cookie.sameSite === 'lax' ? 'selected' : ''}>Lax</option>
-                <option value="strict" ${cookie.sameSite === 'strict' ? 'selected' : ''}>Strict</option>
-                <option value="no_restriction" ${cookie.sameSite === 'no_restriction' ? 'selected' : ''}>None</option>
+                <option value="unspecified" ${cookie.sameSite === 'unspecified' ? 'selected' : ''}>${t('edit.unspecified')}</option>
+                <option value="lax" ${cookie.sameSite === 'lax' ? 'selected' : ''}>${t('edit.lax')}</option>
+                <option value="strict" ${cookie.sameSite === 'strict' ? 'selected' : ''}>${t('edit.strict')}</option>
+                <option value="no_restriction" ${cookie.sameSite === 'no_restriction' ? 'selected' : ''}>${t('edit.none')}</option>
               </select>
             </label>
 
             <label class="cookie-edit-field" id="expires-field">
-              <span>Expires</span>
+              <span>${t('edit.expires')}</span>
               <input type="datetime-local" name="expires" value="${defaultExpirationLocal(cookie)}" />
             </label>
 
             <p class="cookie-edit-error list-state list-state--error" id="cookie-edit-error" hidden></p>
 
             <div class="cookie-edit-actions">
-              <button type="button" class="cookie-edit-btn cookie-edit-btn--cancel" data-action="cancel-edit">Cancel</button>
-              <button type="submit" class="cookie-edit-btn cookie-edit-btn--save">Save changes</button>
+              <button type="button" class="cookie-edit-btn cookie-edit-btn--cancel" data-action="cancel-edit">${t('common.cancel')}</button>
+              <button type="submit" class="cookie-edit-btn cookie-edit-btn--save">${t('edit.save')}</button>
             </div>
           </form>
         </section>
@@ -140,55 +143,59 @@ export function openCookieEdit(
         }
 
         try {
-            await updateCookie(cookie, input);
+            if (isVaulted) {
+                await updateVaultedCookie(cookie, input);
+            } else {
+                await updateCookie(cookie, input)
+            }
             close();
             await onSaved();
         } catch (error) {
             errorEl.hidden = false;
             errorEl.textContent = error instanceof Error
                 ? error.message
-                : 'Failed to update cookie.';
+                : t('errors.update');
         }
     });
 
     overlay.element.querySelector<HTMLButtonElement>('[data-action="close-edit"]')?.focus();
 }
 
-function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInput): string | null {
+export function getValidationError(cookie: chrome.cookies.Cookie, input: CookieEditInput): string | null {
     const name = cookie.name || '';
     const path = cookie.path || '/';
 
     if (!name.trim()) {
-        return "Cookie name cannot be empty.";
+        return t('validation.name');
     }
     if (/[\r\n;,]/.test(input.value)) {
-        return "Cookie value contains invalid characters.";
+        return t('validation.value');
     }
 
     if (name.startsWith('__Host-')) {
         if (!input.secure) {
-            return "Cookies prefixed with '__Host-' must have the Secure flag enabled.";
+            return t('validation.hostSecure');
         }
         if (path !== '/') {
-            return "Cookies prefixed with '__Host-' must have a Path set strictly to '/'.";
+            return t('validation.hostPath');
         }
     }
 
     if (name.startsWith('__Secure-') && !input.secure) {
-        return "Cookies prefixed with '__Secure-' must have the Secure flag enabled.";
+        return t('validation.securePrefix');
     }
 
     if (input.sameSite === 'no_restriction' && !input.secure) {
-        return "Cookies with 'SameSite=None' must also have the 'Secure' attribute checked.";
+        return t('validation.sameSite');
     }
 
     if (!input.session) {
         if (input.expirationDate === undefined || isNaN(input.expirationDate)) {
-            return "Enter an expiration date and time, or check the 'Session' flag.";
+            return t('validation.expiration');
         }
         const nowSec = Math.floor(Date.now() / 1000);
         if (input.expirationDate <= nowSec) {
-            return "Set Expiration date has passed.";
+            return t('validation.expired');
         }
     }
     return null;

@@ -101,7 +101,7 @@ body {
       cursor: pointer;
       user-select: none;
 
-      input[type="checkbox"] {
+      input[type="radio"] {
         cursor: pointer;
         accent-color: var(--accent-green);
       }
@@ -273,6 +273,20 @@ input:checked + .slider:before {
         background-color: var(--accent-red);
         box-shadow: rgba(248, 113, 113, 0.5) 0 0 5px;
       }
+
+      &--yellow {
+        background-color: var(--accent-amber);
+        box-shadow: rgba(251, 191, 36, 0.5) 0 0 5px;
+      }
+
+      &--orange {
+        background-color: #fb923c;
+        box-shadow: rgba(251, 146, 60, 0.5) 0 0 5px;
+      }
+
+      &--empty {
+        background-color: var(--text-muted);
+      }
     }
 
     .site-name {
@@ -367,6 +381,7 @@ input:checked + .slider:before {
   box-sizing: border-box;
   overflow-y: auto;
   font-family: var(--font-mono);
+  @include mixins.compact-scrollbar;
 }
 
 .detail-card {
@@ -374,12 +389,21 @@ input:checked + .slider:before {
   border: 1px solid var(--border-1);
   border-radius: 8px;
   padding: 12px;
+  box-sizing: border-box;
+  min-height: 0;
+
+  &.profile-card {
+    display: flex;
+    flex-direction: column;
+    flex:1;
+  }
 
   .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 12px;
+    flex-shrink: 0;
 
     .header-title {
       display: flex;
@@ -638,6 +662,16 @@ input:checked + .slider:before {
 }
 
   // Site Profile styles
+  .profile-container {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-gutter: stable;
+    font-family: var(--font-mono);
+    @include mixins.compact-scrollbar;
+  }
+
   .profile-grid {
     display: flex;
     flex-direction: column;
@@ -645,6 +679,8 @@ input:checked + .slider:before {
 
     .profile-row {
       display: flex;
+      flex-wrap: wrap;
+      gap: 4px 8px;
       justify-content: space-between;
       font-size: 12px;
       border-bottom: 1px dashed var(--border-1);
@@ -665,15 +701,104 @@ input:checked + .slider:before {
         text-align: right;
 
         &.score-badge {
-          background: rgba(52, 211, 153, 0.15);
-          color: var(--accent-green);
           padding: 1px 6px;
           border-radius: 4px;
+
+          &.score-badge--good {
+            background: rgba(52, 211, 153, 0.15);
+            color: var(--accent-green);
+          }
+
+          &.score-badge--ok {
+            background: rgba(96, 165, 250, 0.15);
+            color: var(--accent-blue);
+          }
+
+          &.score-badge--warn {
+            background: rgba(251, 191, 36, 0.15);
+            color: var(--accent-amber);
+          }
+
+          &.score-badge--bad {
+            background: rgba(248, 113, 113, 0.15);
+            color: var(--accent-red);
+          }
+
+          &.score-badge--empty {
+            background: var(--surface-3);
+            color: var(--text-muted);
+          }
         }
 
         &.status-green {
           color: var(--accent-green);
         }
+      }
+
+      &.profile-row--stacked {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+
+        .profile-value {
+          max-width: none;
+          text-align: left;
+        }
+      }
+    }
+
+    .cookie-security-summary {
+      margin: 0 0 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      line-height: 1.4;
+    }
+
+    .cookie-security-findings {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      max-height: 120px;
+    }
+
+    .cookie-security-finding {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 6px;
+      align-items: start;
+      font-size: 11px;
+      line-height: 1.35;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background: var(--surface-2);
+      border: 1px solid var(--border-1);
+
+      &__deduction {
+        font-family: var(--font-mono);
+        color: var(--accent-amber);
+        font-weight: 600;
+      }
+
+      &__text {
+        color: var(--text-secondary);
+        font-family: var(--font-sans);
+      }
+
+      &__cookie {
+        color: var(--text-muted);
+        font-family: var(--font-mono);
+        max-width: 72px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      &--minor .cookie-security-finding__deduction {
+        color: var(--text-muted);
       }
     }
   }
@@ -772,6 +897,30 @@ input:checked + .slider:before {
   font-family: var(--font-mono);
   color: var(--text-muted);
   min-height: 94%;
+
+  .card-header {
+    align-items: flex-start;
+    gap: 8px;
+
+    .header-title {
+      flex: 1;
+      flex-wrap: wrap;
+
+      //noinspection CssInvalidPropertyValue
+      @supports (flex-wrap: balance) {
+        flex-wrap: balance;
+      }
+    }
+
+    .icon-btn {
+      flex-shrink: 0;
+    }
+
+    .entry-count,
+    .clear-log-btn {
+      white-space: nowrap;
+    }
+  }
   
   .operation-grid {
     display: grid;

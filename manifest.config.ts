@@ -3,7 +3,8 @@ import pkg from './package.json'
 
 export default defineManifest({
   manifest_version: 3,
-  name: pkg.name,
+  name: '__MSG_app_name__',
+  default_locale: 'en_US',
   version: pkg.version,
   icons: {
     48: 'public/logo.png',

@@ -1,6 +1,8 @@
+import { t, localizeDocument } from '../i18n';
 import './style.scss';
 import { getCookieSites, type CookieSite } from './cookie_data';
 import { escapeHtml } from './cookie_format';
+import { computeCookieSecurityScore, getCookieSecurityScoreLabel } from './cookie_security_score';
 import { getSettings, renderSettings } from './main_settings';
 import { closeAllOverlays, type OverlayHandle } from './overlay';
 import { renderSiteDetails } from './site_settings';
@@ -9,10 +11,22 @@ import { applyTheme } from './theme';
 import { deleteSpecificCookie } from './cookie_actions';
 import { recordOperation } from "./operation_log";
 
-
 let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
+
+function getSiteSecurityStatus(site: CookieSite) {
+    const { score } = computeCookieSecurityScore(site);
+    const variant = score === null ? 'empty'
+        : score >= 90 ? 'safe'
+        : score >= 75 ? 'yellow'
+        : score >= 60 ? 'orange'
+        : 'unsafe';
+    return {
+        className: `status-dot status-dot--${variant}`,
+        title: t('home.securityTitle', { score: score === null ? t('home.notAvailable') : `${score}/100`, summary: getCookieSecurityScoreLabel(score) }),
+    };
+}
 
 async function loadSites(): Promise<CookieSite[]> {
     const [cookieSites, profiles] = await Promise.all([
@@ -32,7 +46,7 @@ async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle)
         void renderSiteList();  // re-render site list, ensures most up-to-date version of list if a user clicks 'unvault all'
     } catch (error) {
         if (overlay) throw error;
-        loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
+        loadError = error instanceof Error ? error.message : t('errors.read');
         void renderSiteList();
         return;
     }
@@ -49,6 +63,7 @@ async function openSiteDetailsForDomain(domain: string, overlay?: OverlayHandle)
         site,
         async () => {
             await updateSiteCard(domain);
+            await renderSiteList();
         },
         overlay,
     );
@@ -73,35 +88,46 @@ async function renderSiteList() {
     }
 
     const searchInput = document.getElementById('site-search') as HTMLInputElement;
-    const vaultCheck = document.getElementById('filter-vaulted') as HTMLInputElement;
-    const unvaultCheck = document.getElementById('filter-unvaulted') as HTMLInputElement;
-    const statusSafe = document.getElementById('filter-safe') as HTMLInputElement;
-    const statusFlagged = document.getElementById('filter-flagged') as HTMLInputElement;
+    const filterUnflagged = document.getElementById('filter-unflagged') as HTMLInputElement;
+    const filterFlagged = document.getElementById('filter-flagged') as HTMLInputElement;
 
 
     if (isLoading) {
-        container.innerHTML = '<p class="list-state">Reading browser cookies…</p>';
+        container.innerHTML = `<p class="list-state">${t('home.loading')}</p>`;
         return;
     }
 
     const filterText = searchInput?.value.toLowerCase() || '';
-    const showVaulted = vaultCheck?.checked ?? true;
-    const showUnvaulted = unvaultCheck?.checked ?? true;
-    const showSafe = statusSafe?.checked ?? true;
-    const showFlagged = statusFlagged.checked ?? true;
+    const isUnflagged = filterUnflagged?.checked ?? true;
+    const isFlagged = filterFlagged.checked ?? true;
 
     const filteredSites = sites.filter(site => {
         const matchesText = site.domain.toLowerCase().includes(filterText);
-        const matchesCategory = (showVaulted && site.cookies.some(cookie => cookie.isVaulted))
-            || (showUnvaulted && site.cookies.some(cookie => !cookie.isVaulted));
-        const matchesStatus = (site.allSecure && showSafe) || (!site.allSecure && showFlagged);
-        return matchesText && matchesCategory && matchesStatus;
-    }).sort((a, b) => Number(b.isPinned) - Number(a.isPinned));
+        const { score } = computeCookieSecurityScore(site);
+        const unflagged = score !== null && score >= 90;
+        let matchesFilter = true;
+        if (isUnflagged) {
+            matchesFilter = unflagged;
+        } else if (isFlagged) {
+            matchesFilter = !unflagged;
+        }
+        return matchesText && matchesFilter
+    }).sort((a, b) => {
+        if (a.isPinned !== b.isPinned) {
+            return Number(b.isPinned) - Number(a.isPinned);
+        }
+        const aVaulted = a.cookies.some(cookie => cookie.isVaulted);
+        const bVaulted = b.cookies.some(cookie => cookie.isVaulted);
+        if (aVaulted !== bVaulted) {
+            return Number(bVaulted) - Number(aVaulted);
+        }
+        return 0;
+    });
 
     if (filteredSites.length === 0) {
         container.innerHTML = `<p class="list-state">${sites.length === 0
-            ? 'No browser cookies found.'
-            : 'No domains match the current filters.'}</p>`;
+            ? t('home.empty')
+            : t('home.noMatches')}</p>`;
         return;
     }
 
@@ -110,32 +136,30 @@ async function renderSiteList() {
     for (const [index, site] of filteredSites.entries()) {
         const card = document.createElement('div');
         card.className = 'site-card';
-        const secureStatus = site.allSecure
-            ? 'All cookies have the Secure flag'
-            : 'Contains cookies without the Secure flag';
+        const securityStatus = getSiteSecurityStatus(site);
         const domain = escapeHtml(site.domain);
         const pinned = site.isPinned;
         const vaultedCount = site.cookies.filter(cookie => cookie.isVaulted).length;
 
         card.innerHTML = `
           <div class="site-info">
-            <span class="status-dot status-dot--${site.allSecure ? 'safe' : 'unsafe'}"
-              title="${secureStatus}"></span>
+            <span class="${securityStatus.className}"
+              title="${escapeHtml(securityStatus.title)}"></span>
             <span class="site-name" title="${domain}">${domain}</span>
             <span class="site-cookie-count">${site.cookies.length}</span>
-            ${vaultedCount > 0 ? `<span class="site-cookie-count site-cookie-count--vaulted" title="Vaulted cookies for this site" aria-label="${vaultedCount} vaulted cookies">${vaultedCount}</span>` : ''}
+            ${vaultedCount > 0 ? `<span class="site-cookie-count site-cookie-count--vaulted" title="${t('home.vaultedTitle')}" aria-label="${t('home.vaultedCount', { count: vaultedCount })}">${vaultedCount}</span>` : ''}
           </div>
 
           <div class="button-group">
             <button type="button" class="icon-btn${pinned ? ' icon-btn--amber' : ''}" data-action="pin-site"
-              title="${pinned ? 'Unpin Site' : 'Pin Site'}" data-site="${domain}">
+              title="${pinned ? t('home.unpin') : t('home.pin')}" data-site="${domain}">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
     <path d="M4 2.5a.75.75 0 0 1 .75-.75h6.5a.75.75 0 0 1 0 1.5H10.5v3.636l1.205 1.808A.75.75 0 0 1 11.08 10H8.75v3.75a.75.75 0 0 1-1.5 0V10H4.92a.75.75 0 0 1-.624-1.166L5.5 7.026V3.25H4.75A.75.75 0 0 1 4 2.5Z"/>
   </svg>
             </button>
             
             <button type="button" class="icon-btn" data-action="settings-site"
-              title="Site Cookies" data-site="${domain}">
+              title="${t('home.siteCookies')}" data-site="${domain}">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
                 <mask id="gear-bore-${index}">
                   <rect width="16" height="16" fill="white" />
@@ -152,7 +176,7 @@ async function renderSiteList() {
             </button>
 
             <button type="button" class="icon-btn" data-action="delete-site"
-              title="Delete Site Cookies" data-site="${domain}">
+              title="${t('home.deleteSite')}" data-site="${domain}">
               <svg width="14" height="14" viewBox="0 0 13 13" fill="none">
                 <path d="M2 3.5h9M5 3.5V2.5a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 .5.5v1M10 3.5l-.6 7a.5.5 0 0 1-.5.5H4.1a.5.5 0 0 1-.5-.5l-.6-7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"></path>
               </svg>
@@ -188,7 +212,7 @@ async function renderSiteList() {
                 await renderSiteList();
             } catch (error) {
                 pinButton.disabled = false;
-                pinButton.title = error instanceof Error ? error.message : 'Unable to save pin state.';
+                pinButton.title = error instanceof Error ? error.message : t('errors.pin');
             }
         });
     });
@@ -213,12 +237,12 @@ async function renderSiteList() {
             deleteButton.disabled = true;
 
             try {
-                await Promise.all(site.cookies.map(cookie => recordOperation("DELETE", `${cookie.name} deleted`, cookie.domain)));
+                await Promise.all(site.cookies.map(cookie => recordOperation("DELETE", JSON.stringify({ key: 'log.deleted', values: { name: cookie.name } }), cookie.domain)));
                 await Promise.all(site.cookies.map(cookie => deleteSpecificCookie(cookie)));
                 await updateSiteCard(domain);
             } catch (error) {
                 deleteButton.disabled = false;
-                loadError = error instanceof Error ? error.message : 'Unable to delete site cookies.';
+                loadError = error instanceof Error ? error.message : t('errors.deleteSite');
             }
         });
 
@@ -231,10 +255,10 @@ function renderPermissionPrompt() {
 
     container.innerHTML = `
         <div class="permission-prompt">
-            <p class="list-state">Cookie access permissions are required for the extension.</p>
+            <p class="list-state">${t('permissions.required')}</p>
             <button type="button" id="grant-cookies-btn" class="grant-cookie-btn">
-                Click to Grant<br>
-                Site-List & Cookie Access
+                ${t('permissions.grant')}<br>
+                ${t('permissions.access')}
             </button>
         </div>
     `;
@@ -268,7 +292,7 @@ async function loadCookies() {
     try {
         sites = await loadSites();
     } catch (error) {
-        loadError = error instanceof Error ? error.message : 'Unable to read browser cookies.';
+        loadError = error instanceof Error ? error.message : t('errors.read');
     } finally {
         isLoading = false;
         renderSiteList();
@@ -310,12 +334,10 @@ export async function updateSiteCard(domain: string): Promise<void> {
         const cookieCount = card.querySelector<HTMLElement>('.site-cookie-count');
         const vaultedBadge = card.querySelector<HTMLElement>('.site-cookie-count--vaulted');
 
-        // We plan on changing how status dot works later. Make sure to update
         if (statusDot) {
-            statusDot.className = `status-dot status-dot--${freshSite.allSecure ? 'safe' : 'unsafe'}`;
-            statusDot.title = freshSite.allSecure
-                ? 'All cookies have the Secure flag'
-                : 'Contains cookies without the Secure flag';
+            const securityStatus = getSiteSecurityStatus(freshSite);
+            statusDot.className = securityStatus.className;
+            statusDot.title = securityStatus.title;
         }
 
         if (cookieCount) {
@@ -326,13 +348,14 @@ export async function updateSiteCard(domain: string): Promise<void> {
         if (vaultedCount > 0) {
             if (vaultedBadge) {
                 vaultedBadge.textContent = String(vaultedCount);
+                vaultedBadge.setAttribute('aria-label', t('home.vaultedCount', { count: vaultedCount }));
             } else {
                 const infoContainer = card.querySelector('.site-info');
                 if (infoContainer) {
                     const badge = document.createElement('span');
                     badge.className = 'site-cookie-count site-cookie-count--vaulted';
-                    badge.title = 'Vaulted cookies for this site';
-                    badge.setAttribute('aria-label', `${vaultedCount} vaulted cookies`);
+                    badge.title = t('home.vaultedTitle');
+                    badge.setAttribute('aria-label', t('home.vaultedCount', { count: vaultedCount }));
                     badge.textContent = String(vaultedCount);
                     infoContainer.appendChild(badge);
                 }
@@ -345,14 +368,14 @@ export async function updateSiteCard(domain: string): Promise<void> {
 
 function bindHomeEventListeners() {
     document.getElementById('site-search')?.addEventListener('input', renderSiteList);
-    document.getElementById('filter-vaulted')?.addEventListener('change', renderSiteList);
-    document.getElementById('filter-unvaulted')?.addEventListener('change', renderSiteList);
-    document.getElementById('filter-safe')?.addEventListener('change', renderSiteList);
+    document.getElementById('filter-unflagged')?.addEventListener('change', renderSiteList);
     document.getElementById('filter-flagged')?.addEventListener('change', renderSiteList);
+    document.getElementById('filter-both')?.addEventListener('change', renderSiteList);
     document.getElementById('settings-btn')?.addEventListener('click', () => void renderSettings(loadCookies));
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    localizeDocument();
     const settings = await getSettings();
     applyTheme(settings.darkMode);
     bindHomeEventListeners();
@@ -360,7 +383,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await CookieDatabase.getInstance().init();
     } catch (error) {
         isLoading = false;
-        loadError = error instanceof Error ? error.message : 'Unable to open the cookie vault.';
+        loadError = error instanceof Error ? error.message : t('errors.open');
         await renderSiteList();
         return;
     }
