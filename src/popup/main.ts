@@ -15,6 +15,17 @@ let sites: CookieSite[] = [];
 let isLoading = true;
 let loadError: string | null = null;
 
+export async function initPopup() {
+    try {
+        bindHomeEventListeners();
+        // Call loadCookies() directly so data fetching and initial rendering are fully awaited
+        await CookieDatabase.getInstance().init();
+        await loadCookies();
+    } catch (error) {
+        console.error("Failed to initialize popup:", error);
+    }
+}
+
 function getSiteSecurityStatus(site: CookieSite) {
     const { score } = computeCookieSecurityScore(site);
     const variant = score === null ? 'empty'
@@ -99,7 +110,7 @@ async function renderSiteList() {
 
     const filterText = searchInput?.value.toLowerCase() || '';
     const isUnflagged = filterUnflagged?.checked ?? true;
-    const isFlagged = filterFlagged.checked ?? true;
+    const isFlagged = filterFlagged?.checked ?? true;
 
     const filteredSites = sites.filter(site => {
         const matchesText = site.domain.toLowerCase().includes(filterText);
