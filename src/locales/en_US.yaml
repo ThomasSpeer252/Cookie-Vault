@@ -34,7 +34,7 @@ settings:
   autoVault: "Auto-Vault"
   autoVaultHint: "Vault new cookies from safe sites"
   detection: "Detection Active"
-  detectionHint: "Enable XSS/CSRF detection (Stretch)"
+  detectionHint: "Alert when this tab's cookies are sent to a third-party site"
   log: "Operation Log"
   logHint: "Activity history and alerts"
   view: "View"
@@ -139,3 +139,6 @@ database:
   deleteAllProfiles: "Failed to delete all site profiles: {error}"
   clear: "Failed to clear database: {error}"
   aborted: "Database clear aborted: {error}"
+xssAlert:
+  possibleXss: "POSSIBLE XSS"
+  sentTo: "{cookies} sent to {host}"

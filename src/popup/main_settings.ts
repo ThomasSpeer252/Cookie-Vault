@@ -112,6 +112,17 @@ export async function renderSettings(onVaultChanged: () => void | Promise<void>)
     checkbox.checked = Boolean(settings[key]);
     
     checkbox.addEventListener('change', async () => {
+      if (key === 'detectionActive' && checkbox.checked) {
+        const granted = await chrome.permissions.request({
+          permissions: ['cookies'],
+          origins: ['<all_urls>'],
+        });
+        if (!granted) {
+          checkbox.checked = false;
+          return;
+        }
+      }
+
       settings[key] = checkbox.checked;
       await saveSettings(settings);
       

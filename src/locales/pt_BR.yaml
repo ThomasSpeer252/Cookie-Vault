@@ -34,7 +34,7 @@ settings:
   autoVault: "Cofre automático"
   autoVaultHint: "Guardar novos cookies de sites seguros no cofre"
   detection: "Detecção ativa"
-  detectionHint: "Ativar detecção de XSS/CSRF (recurso futuro)"
+  detectionHint: "Alertar quando os cookies desta aba forem enviados a um site de terceiros"
   log: "Atividade"
   logHint: "Histórico de atividades e alertas"
   view: "Ver"
@@ -139,3 +139,6 @@ database:
   deleteAllProfiles: "Falha ao excluir todos os perfis de sites: {error}"
   clear: "Falha ao limpar o banco de dados: {error}"
   aborted: "Limpeza do banco de dados cancelada: {error}"
+xssAlert:
+  possibleXss: "POSSÍVEL XSS"
+  sentTo: "{cookies} enviado para {host}"

