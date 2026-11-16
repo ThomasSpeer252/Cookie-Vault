@@ -15,7 +15,7 @@ export interface OperationEntry {
   site: string;
 }
 
-function cleanUrl(url: string): string {
+export function cleanUrl(url: string): string {
     return url.replace(/^https?:\/\/?|\/+$/g, '');
 }
 
